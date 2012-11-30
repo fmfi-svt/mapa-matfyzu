@@ -1,8 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
 
     <string name="app_name">Mapa Matfyzu</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="button_google_map_sk">Pohyb po mape (Google)</string>
+    <string name="search_teacher_sk">Vyhľadanie učiteľa</string>
+    <string name="search_room_sk">Vyhľadanie miestnosti</string>
+    <string name="google_map_preview_sk">Google Mapa</string>
+    <string name="map_api_key">ENTER KEY</string>
+    <string name="title_activity_osmdroid_map">OSMDroidMapActivity</string>
+    <string name="osm_map_preview_sk">OSMDroid Mapa</string>
+    <string name="button_osm_map_sk">Pohyb po mape (OSM)</string>
 
 </resources>
