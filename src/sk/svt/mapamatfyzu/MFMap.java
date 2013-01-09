@@ -1,6 +1,5 @@
 package sk.svt.mapamatfyzu;
 
-import android.app.Activity;
 import android.os.Bundle;
 import com.google.android.maps.MapActivity;
 
