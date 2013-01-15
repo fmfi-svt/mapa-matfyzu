@@ -19,13 +19,13 @@ public class OSMDroidMapActivity extends Activity {
 
         mapView.setBuiltInZoomControls(true);
 
-        setContentView(mapView); //displaying the MapView
+        setContentView(mapView); 
 
-        mapView.getController().setZoom(15); //set initial zoom-level, depends on your need
+        mapView.getController().setZoom(15); 
 
-        mapView.getController().setCenter(new GeoPoint(48.155,17.134)); //This point is in Enschede, Netherlands. You should select a point in your map or get it from user's location.
+        mapView.getController().setCenter(new GeoPoint(48.155,17.134)); //Somewhere in Bratislava
 
-        mapView.setUseDataConnection(false); //keeps the mapView from loading online tiles using network connection.
+        mapView.setUseDataConnection(true); //Setting to false will make the device load from external storage
 
 	}
 
