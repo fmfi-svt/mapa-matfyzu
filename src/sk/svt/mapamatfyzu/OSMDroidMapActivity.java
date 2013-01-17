@@ -21,9 +21,9 @@ public class OSMDroidMapActivity extends Activity {
 
         setContentView(mapView); 
 
-        mapView.getController().setZoom(15); 
+        mapView.getController().setZoom(16); 
 
-        mapView.getController().setCenter(new GeoPoint(48.155,17.134)); //Somewhere in Bratislava
+        mapView.getController().setCenter(new GeoPoint(48.151836,17.071214)); // Right upon FMFI UK
 
         mapView.setUseDataConnection(true); //Setting to false will make the device load from external storage
 
