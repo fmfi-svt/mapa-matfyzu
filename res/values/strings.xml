@@ -12,6 +12,9 @@
     <string name="map_api_key">ENTER KEY</string>
     <string name="title_activity_osmdroid_map">OSMDroidMapActivity</string>
     <string name="osm_map_preview_sk">OSMDroid Mapa</string>
-    <string name="button_osm_map_sk">Pohyb po mape (OSM)</string>
-
+    <string name="button_osm_map_sk">Pohyb po mape</string>
+	
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    
 </resources>

@@ -21,10 +21,6 @@ public class MainActivity extends Activity {
     }
     
     public void onClick(View view) {
-    	if (view.getId() == R.id.button_google_map) {
-    		Intent intent = new Intent(this, MFMap.class);
-    		startActivity(intent);
-    	}
     	if (view.getId() == R.id.button_osm_map) {
     		Intent intent = new Intent(this, OSMDroidMapActivity.class);
     		startActivity(intent);

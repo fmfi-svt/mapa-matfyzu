@@ -27,29 +27,18 @@
         android:id="@+id/button_teacher"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textView1"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="145dp"
+        android:layout_centerVertical="true"
         android:onClick="onClick"
         android:text="@string/search_teacher_sk" />
-
-    <Button
-        android:id="@+id/button_google_map"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/button_teacher"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="54dp"
-        android:onClick="onClick"
-        android:text="@string/button_google_map_sk" />
 
     <Button
         android:id="@+id/button_osm_map"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/button_google_map"
+        android:layout_above="@+id/button_teacher"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="26dp"
         android:onClick="onClick"
         android:text="@string/button_osm_map_sk" />
 
