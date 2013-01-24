@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/black" >
 
-    <org.osmdroid.views.MapView
+	<org.osmdroid.views.MapView
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/osmmapview"
         android:layout_width="fill_parent"
