@@ -1,6 +1,7 @@
 package sk.svt.mapamatfyzu;
 
 import org.osmdroid.ResourceProxy;
+import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.tileprovider.MapTileProviderBase;
 import org.osmdroid.views.MapView;
 
@@ -47,7 +48,8 @@ public class MyMapView extends MapView {
 	
 	@Override
 	public int getMinZoomLevel() {
-		return 15;
+		return 14;
 	}
+	
 	
 }
