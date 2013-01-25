@@ -7,11 +7,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/android-support-v4.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/osmdroid-android-3.0.7-javadoc.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/slf4j-android-1.5.8.jar"/>
-	<classpathentry kind="lib" path="lib/osmdroid-android-3.0.7-modified.jar"/>
-	<classpathentry exported="true" kind="lib" path="export/osmdroid-android-3.0.7.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MapaMatfyzu/lib/osmdroid-android-3.0.7-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="lib/osmdroid-android-3.0.7.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

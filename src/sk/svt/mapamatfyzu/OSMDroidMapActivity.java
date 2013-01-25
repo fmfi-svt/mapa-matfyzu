@@ -47,8 +47,6 @@ public class OSMDroidMapActivity extends Activity {
         
         this.mapController = mapView.getController();
         
-        
-        
         mapView.setBuiltInZoomControls(true);
         
         mapView.getController().setZoom(16);
