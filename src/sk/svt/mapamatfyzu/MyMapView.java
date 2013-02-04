@@ -51,5 +51,13 @@ public class MyMapView extends MapView {
 		return 14;
 	}
 	
+	@Override
+	protected void onScrollChanged(int pL, int pT, int pOldl, int pOldt) {
+		if (pL < 1591247) {
+			scrollTo(1591247,pT);
+		}
+		super.onScrollChanged(pL, pT, pOldl, pOldt);
+	}
+	
 	
 }
