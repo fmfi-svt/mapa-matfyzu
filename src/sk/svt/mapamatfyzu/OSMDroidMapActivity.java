@@ -46,7 +46,7 @@ public class OSMDroidMapActivity extends Activity {
         setContentView(R.layout.activity_osmdroid_map); 
         
         this.mapView = (BoundedMapView) findViewById(R.id.osmmapview);
-        
+        	
         this.mapController = mapView.getController();
         
         mapView.setBuiltInZoomControls(true);
@@ -58,33 +58,37 @@ public class OSMDroidMapActivity extends Activity {
         mapView.setUseDataConnection(true); //Setting to false will make the device load from external storage
         
         
-        // Attempt to add some overlay.. but somehow it doesn't work yet
+        // Simple overlay
         markers = new ArrayList<OverlayItem>();
+        DefaultResourceProxyImpl defaultResourceProxyImpl = new DefaultResourceProxyImpl(this);
+
+        OverlayItem majak = new OverlayItem("Kancelaria", "Majakova kancelaria", new GeoPoint(48.151732,17.069064));
+        majak.setMarker(this.getResources().getDrawable(R.drawable.marker_default));
         
-        OverlayItem marker = new OverlayItem("Kancelaria", "Majakova kancelaria", new GeoPoint(48.151123,17.069084));
-        marker.setMarker(this.getResources().getDrawable(R.drawable.marker_default));
-                
-        markers.add(marker);
-        this.myOverlay = new ItemizedIconOverlay<OverlayItem>(this.getApplicationContext(), new ArrayList<OverlayItem>(), new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
+        OverlayItem vchod = new OverlayItem("Vchod", "Vchod do matickeho pavilonu", new GeoPoint(48.151360,17.070758));
+        vchod.setMarker(this.getResources().getDrawable(R.drawable.marker));
+        
+        markers.add(majak);
+        markers.add(vchod);
+        this.myOverlay = new ItemizedIconOverlay<OverlayItem>(markers, new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
 
 			public boolean onItemLongPress(int arg0, OverlayItem arg1) {
 				Toast.makeText(
                         OSMDroidMapActivity.this,
-                        "Item '" + arg1.mTitle, Toast.LENGTH_LONG).show();
+                        arg1.mDescription, Toast.LENGTH_LONG).show();
 				return false;
 			}
 
 			public boolean onItemSingleTapUp(int arg0, OverlayItem arg1) {
 				Toast.makeText(
                         OSMDroidMapActivity.this, 
-                        "Item '" + arg1.mTitle ,Toast.LENGTH_LONG).show();
+                        arg1.mTitle ,Toast.LENGTH_LONG).show();
 				return false;
 			}
 
-        });
+        }, defaultResourceProxyImpl);
         mapView.getOverlays().add(this.myOverlay);        
         mapView.invalidate();
-        // End of attempt
 
 	}
 
@@ -171,6 +175,15 @@ public class OSMDroidMapActivity extends Activity {
 			
         	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
         
+		} else {
+			TextView t = (TextView) findViewById(R.id.textView1);
+			GeoPoint LT = (GeoPoint) mapView.getProjection().fromPixels(0, 0);
+			GeoPoint RB = (GeoPoint) mapView.getProjection().fromPixels(mapView.getWidth(), mapView.getHeight());
+			
+		//	t.setText("X: " + ev.getX() + ", Y: " + ev.getY() + "\nW: " + mapView.getWidth() + ", H: " + mapView.getHeight());
+			
+			t.setText("Longitude: " + ((ev.getX()/mapView.getWidth())*(RB.getLongitudeE6()-LT.getLongitudeE6())+LT.getLongitudeE6())/1E6 + "\n" +
+					  "Latitude: " + ((1-(ev.getY()-mapView.getY())/mapView.getHeight())*(LT.getLatitudeE6()-RB.getLatitudeE6())+RB.getLatitudeE6())/1E6);
 		}
 		
 		return super.dispatchTouchEvent(ev);
