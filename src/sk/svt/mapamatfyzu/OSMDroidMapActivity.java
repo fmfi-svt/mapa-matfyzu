@@ -9,13 +9,17 @@ import org.osmdroid.ResourceProxy;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
+import org.osmdroid.tileprovider.MapTileProviderArray;
+import org.osmdroid.tileprovider.modules.MapTileModuleProviderBase;
 import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
+import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.ItemizedOverlay;
 import org.osmdroid.views.overlay.OverlayItem;
+import org.osmdroid.views.overlay.TilesOverlay;
 
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
@@ -23,6 +27,7 @@ import org.osmdroid.views.MapView.Projection;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.Window;
@@ -33,8 +38,8 @@ public class OSMDroidMapActivity extends Activity {
 
 	BoundedMapView mapView;
 	MapController mapController;
-	GeoPoint BorderLeftTop = null;
-	GeoPoint BorderRightBottom = null;
+	GeoPoint BorderLeftTop = new GeoPoint(48.153060, 17.066788);
+	GeoPoint BorderRightBottom = new GeoPoint(48.149180, 17.072130);
 	ArrayList<OverlayItem> markers;
 	ItemizedOverlay<OverlayItem> myOverlay;
 	
@@ -50,22 +55,38 @@ public class OSMDroidMapActivity extends Activity {
         this.mapController = mapView.getController();
         
         mapView.setBuiltInZoomControls(true);
+        mapView.setMultiTouchControls(true);
         
         mapView.getController().setZoom(16);
         
         mapView.getController().setCenter(new GeoPoint(48.151836,17.071214)); // Right upon FMFI UK
-                
-        mapView.setUseDataConnection(true); //Setting to false will make the device load from external storage
+      
         
+        
+        // This section makes the application load maps from assets folder
+        final AssetsTileSource ASSETS_TILE_SOURCE = new AssetsTileSource(this.getAssets(), "Map",  ResourceProxy.string.offline_mode, 14, 18, 256, ".png"); // This will load from assets/Map/14/xxxx/yyyyy.png
+
+        MapTileModuleProviderBase moduleProvider = new MapTileFileAssetsProvider(ASSETS_TILE_SOURCE);
+        SimpleRegisterReceiver simpleReceiver = new SimpleRegisterReceiver(this);
+        MapTileProviderArray tileProviderArray = new MapTileProviderArray(ASSETS_TILE_SOURCE, simpleReceiver, new MapTileModuleProviderBase[] { moduleProvider });
+
+        TilesOverlay tilesOverlay = new TilesOverlay(tileProviderArray, getApplicationContext());
+		tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+        mapView.getOverlays().add(tilesOverlay);
+       
+              
+        
+        
+        //mapView.setUseDataConnection(false); //Setting to false will make the device load from external storage
         
         // Simple overlay
         markers = new ArrayList<OverlayItem>();
         DefaultResourceProxyImpl defaultResourceProxyImpl = new DefaultResourceProxyImpl(this);
 
-        OverlayItem majak = new OverlayItem("Kancelaria", "Majakova kancelaria", new GeoPoint(48.151732,17.069064));
+        OverlayItem majak = new OverlayItem("Kancelaria", "Majakova kancelaria", new GeoPoint(48.152312,17.069064));
         majak.setMarker(this.getResources().getDrawable(R.drawable.marker_default));
         
-        OverlayItem vchod = new OverlayItem("Vchod", "Vchod do matickeho pavilonu", new GeoPoint(48.151360,17.070758));
+        OverlayItem vchod = new OverlayItem("Vchod", "Vchod do matickeho pavilonu", new GeoPoint(48.152312,17.070798));
         vchod.setMarker(this.getResources().getDrawable(R.drawable.marker));
         
         markers.add(majak);
@@ -82,14 +103,16 @@ public class OSMDroidMapActivity extends Activity {
 			public boolean onItemSingleTapUp(int arg0, OverlayItem arg1) {
 				Toast.makeText(
                         OSMDroidMapActivity.this, 
-                        arg1.mTitle ,Toast.LENGTH_LONG).show();
+                        arg1.mTitle ,Toast.LENGTH_SHORT).show();
 				return false;
 			}
 
         }, defaultResourceProxyImpl);
         mapView.getOverlays().add(this.myOverlay);        
-        mapView.invalidate();
-
+        
+    	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
+    	mapView.invalidate();
+    	
 	}
 
 	@Override
@@ -173,8 +196,6 @@ public class OSMDroidMapActivity extends Activity {
 	        t.setText("Left top: " + BorderLeftTop.getLongitudeE6()/1E6 + ", " + BorderLeftTop.getLatitudeE6()/1E6 + "\n" +
 	        "Right Bottom" + BorderRightBottom.getLongitudeE6()/1E6 + ", " + BorderRightBottom.getLatitudeE6()/1E6);
 			
-        	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
-        
 		} else {
 			TextView t = (TextView) findViewById(R.id.textView1);
 			GeoPoint LT = (GeoPoint) mapView.getProjection().fromPixels(0, 0);
@@ -183,8 +204,10 @@ public class OSMDroidMapActivity extends Activity {
 		//	t.setText("X: " + ev.getX() + ", Y: " + ev.getY() + "\nW: " + mapView.getWidth() + ", H: " + mapView.getHeight());
 			
 			t.setText("Longitude: " + ((ev.getX()/mapView.getWidth())*(RB.getLongitudeE6()-LT.getLongitudeE6())+LT.getLongitudeE6())/1E6 + "\n" +
-					  "Latitude: " + ((1-(ev.getY()-mapView.getY())/mapView.getHeight())*(LT.getLatitudeE6()-RB.getLatitudeE6())+RB.getLatitudeE6())/1E6);
+					  "Latitude: " + ((1-(ev.getY()-mapView.getY())/mapView.getHeight())*(LT.getLatitudeE6()-RB.getLatitudeE6())+RB.getLatitudeE6())/1E6 + "\n" +
+					"Zoom: " + mapView.getZoomLevel());
 		}
+		//mapView.invalidate();
 		
 		return super.dispatchTouchEvent(ev);
 		
