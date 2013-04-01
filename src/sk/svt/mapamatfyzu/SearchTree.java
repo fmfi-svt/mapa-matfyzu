@@ -1,5 +1,8 @@
 package sk.svt.mapamatfyzu;
 
+import android.annotation.SuppressLint;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 
 public class SearchTree {
@@ -8,6 +11,14 @@ public class SearchTree {
 	
 	public SearchTree() {
 		root = new Node(-1, new ArrayList<Integer>());
+	}
+	
+	// Remove diacritics
+	@SuppressLint("NewApi")
+	public static String removeAccents(String text) {
+	    return text == null ? null
+	        : Normalizer.normalize(text, Form.NFD)
+	            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
 	}
 	
 	private String deleteRedundant(String s) {
@@ -25,6 +36,7 @@ public class SearchTree {
 	
 	public void addRecord(String record, int index) {
 		int pos = 0;
+		record = removeAccents(record);
 		record = record.toLowerCase();
 		record = deleteRedundant(record);
 		Node actual = root;		
@@ -38,7 +50,45 @@ public class SearchTree {
 	
 	public ArrayList<Integer> searchName(String name, int mistakes) {
 		
+		name = removeAccents(name);
+		name = name.toLowerCase();
+		name = deleteRedundant(name);
+		
 		return search(name, mistakes, this.root);
+	}
+	
+	public ArrayList<Integer> suggestiveSearch(String name) {
+		
+		name = removeAccents(name);
+		name = name.toLowerCase();
+		name = deleteRedundant(name);
+	
+		return sugSearch(name, this.root);
+		
+	}
+	
+	private ArrayList<Integer> sugSearch(String name, Node actual) {
+		
+		if (name.length() > 0) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(name);
+			sb.deleteCharAt(0);
+			int first = name.charAt(0) - 'a';
+			if (actual.hasChild(first)) {
+				return sugSearch(sb.toString(), actual.getChild(first));
+			} else {
+				return new ArrayList<Integer>();
+			}
+		} else {
+			ArrayList<Integer> ret = actual.getIndexes();
+			for (int i = 0; i < 26; i++) {
+				if (actual.hasChild(i)) {
+					ret.addAll(sugSearch(name, actual.getChild(i)));
+				}
+			}
+			return ret;
+		}
+		
 	}
 	
 	private ArrayList<Integer> search(String name, int mistakes, Node actual) {

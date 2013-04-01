@@ -17,7 +17,6 @@ import org.osmdroid.util.GeoPoint;
 
 public class MainActivity extends Activity {
 	
-	SearchTree tree;
 	ArrayList<ArrayList<String>> teacherNames;
 	ArrayList<ArrayList<Double>> teacherPositions;
 
@@ -61,7 +60,6 @@ public class MainActivity extends Activity {
         
         String filename = "names.txt";
         
-        tree = new SearchTree();
 		teacherNames = new ArrayList<ArrayList<String>>();
 		teacherPositions = new ArrayList<ArrayList<Double>>();
         
@@ -85,7 +83,6 @@ public class MainActivity extends Activity {
 				ArrayList<Double> tmppositions = new ArrayList<Double>();
 				for (int i = 0; i < tmp.size(); i++) {
 					if (tmp.get(i).getClass() != Double.class) {
-						tree.addRecord(tmp.get(i).toString(), count);
 						tmpnames.add(tmp.get(i).toString());
 					} else {
 						tmppositions.add((Double) tmp.get(i));
@@ -121,12 +118,21 @@ public class MainActivity extends Activity {
     public void onClick(View view) {
     	if (view.getId() == R.id.button_osm_map) {
     		Intent intent = new Intent(this, OSMDroidMapActivity.class);
-    		intent.putExtra("test", 8);
     		for (int i = 0; i < teacherNames.size(); i++) {
 	    		intent.putExtra("teacherNames", teacherNames);
 	    		intent.putExtra("teacherPositions", teacherPositions);
 	    	}
     		startActivity(intent);
+    	}
+    	if (view.getId() == R.id.button_teacher) {
+    		Intent intent = new Intent(this, OSMDroidMapActivity.class);
+    		intent.putExtra("search", 1);
+    		for (int i = 0; i < teacherNames.size(); i++) {
+	    		intent.putExtra("teacherNames", teacherNames);
+	    		intent.putExtra("teacherPositions", teacherPositions);
+	    	}
+    		startActivity(intent);
+    		
     	}
     }
 }

@@ -27,4 +27,22 @@
         android:text="@string/osm_map_preview_sk"
         android:textColor="@color/white" />
 
+    <ListView
+        android:id="@+id/listView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/editText1" >
+
+    </ListView>
+
+    <EditText
+        android:id="@+id/editText1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@+id/osmmapview"
+        android:ems="10" />
+
 </RelativeLayout>

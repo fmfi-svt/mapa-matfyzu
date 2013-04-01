@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import android.os.Bundle;
 
@@ -32,9 +33,16 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,8 +55,121 @@ public class OSMDroidMapActivity extends Activity {
 	ArrayList<OverlayItem> markers;
 	ItemizedOverlay<OverlayItem> myOverlay;
 	ArrayList<ArrayList<String> > teacherNames;
+	ArrayList<String> teacherNamesPlain;
 	ArrayList<GeoPoint> teacherPositions;	
 	SearchTree tree;
+	ListView list;
+	EditText edit;
+	ArrayList<String> selection; 
+	
+	private ArrayList<String> parseString(String s) {
+		int index = 0;
+		ArrayList<String> res = new ArrayList<String>();
+		while (index < s.length()) {
+			
+			// Ignore ALL the whitespaces !
+			while ((index < s.length()) && (s.charAt(index) == ' ')) {
+				index++;
+			}
+			String tmp = new String();
+			while ((index < s.length()) && (s.charAt(index) != ' ')) {
+				tmp += s.charAt(index);
+				index++;
+			}
+			if (tmp.length() != 0) {
+				res.add(tmp);				
+			}
+		}
+		
+		return res;
+	}
+	
+	private class Pair implements Comparable {
+		int key;
+		int value;
+		
+		public Pair(int _key, int _value) {
+			key = _key;
+			value = _value;
+		}
+		
+		public int compareTo(Object another) {
+			// TODO Auto-generated method stub
+			Pair tmp = (Pair) another;
+			return this.key - tmp.getKey();
+		}
+		
+		public int getKey() {
+			return key;
+		}
+		
+		public int getValue() {
+			return value;
+		}
+		
+	}
+	
+	private ArrayList<Integer> getPossibleSearches(String search) {
+		
+		ArrayList<String> strings = parseString(search);
+		ArrayList<Integer> tmpindexes = new ArrayList<Integer>();
+		
+		// TextView text = (TextView) findViewById(R.id.textView1);
+		
+		// text.setText("");
+		
+		for (int i = 0; i < strings.size(); i++) {
+			tmpindexes.addAll(tree.suggestiveSearch(strings.get(i)));
+		}
+		
+		ArrayList<Pair> forsort = new ArrayList<Pair>();
+		ArrayList<Integer> res = new ArrayList<Integer>();
+		
+		while (tmpindexes.size() > 0) {
+			int count = 0;
+			int value = tmpindexes.get(0);
+			for (int i = tmpindexes.size()-1; i >= 0; i--) {
+				if (tmpindexes.get(i) == value) {
+					count++;
+					tmpindexes.remove(i);
+				}
+			}
+			forsort.add(new Pair(count, value));
+		}
+	/*
+	 * Consider only best matches	
+	 */
+		int maxcount = 0;
+		
+		for (int i = 0; i < forsort.size(); i++) {
+			if (maxcount < forsort.get(i).getKey()) {
+				maxcount = forsort.get(i).getKey();
+			}
+		}
+		for (int i = 0; i < forsort.size(); i++) {
+			if (forsort.get(i).getKey() == maxcount) {
+				res.add(forsort.get(i).getValue());
+			}
+		}
+		
+/*
+ *  Another algorithm, considers even non-perfect matches		
+ *  
+		Pair indexes[] = new Pair[forsort.size()];
+		
+		for (int i = 0; i < forsort.size(); i++) {
+			indexes[i] = forsort.get(i);
+		}
+		
+		
+		Arrays.sort(indexes);
+		
+		for (int i = forsort.size()-1; i >= 0; i--) {
+			res.add(indexes[i].getValue());
+		}
+*/
+		return res;
+	}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,12 +181,18 @@ public class OSMDroidMapActivity extends Activity {
 		int counter = 0;
 		teacherNames = new ArrayList<ArrayList<String>>();
 		teacherPositions = new ArrayList<GeoPoint>();
+		teacherNamesPlain = new ArrayList<String>();
 		ArrayList<ArrayList<Double>> teacherPositionsTmp = new ArrayList<ArrayList<Double>>();
-		int testint = extras.getInt("test");
 		teacherNames = (ArrayList<ArrayList<String>>) extras.get("teacherNames");
 		teacherPositionsTmp = (ArrayList<ArrayList<Double>>) extras.get("teacherPositions");
 		for (int i = 0; i < teacherPositionsTmp.size(); i++) {
 			teacherPositions.add(new GeoPoint(teacherPositionsTmp.get(i).get(0), teacherPositionsTmp.get(i).get(1)));
+			String s = new String();
+			for (int j = 0; j < teacherNames.get(i).size()-1; j++) {
+				s += teacherNames.get(i).get(j)+ " ";
+			}
+			s += "(" + teacherNames.get(i).get(teacherNames.get(i).size()-1) + ")";
+			teacherNamesPlain.add(s);
 		}
 		
 		// Eventually, I was able to pass even ArrayLists, so this block is PROBABLY not needed anymore
@@ -86,7 +213,8 @@ public class OSMDroidMapActivity extends Activity {
 		tree = new SearchTree();
 		
 		for (int i = 0; i < teacherNames.size(); i++) {
-			for (int j = 0; j < teacherNames.get(i).size(); j++) {
+			// Last string is room, we don't want it here.
+			for (int j = 0; j < teacherNames.get(i).size()-1; j++) {
 				tree.addRecord(teacherNames.get(i).get(j), i);
 			}
 		}
@@ -103,7 +231,68 @@ public class OSMDroidMapActivity extends Activity {
         mapView.getController().setZoom(16);
         
         mapView.getController().setCenter(new GeoPoint(48.151836,17.071214)); // Right upon FMFI UK
-      
+        
+        list = (ListView) findViewById(R.id.listView1);
+    	edit = (EditText) findViewById(R.id.editText1);
+        list.setAlpha((float) 1);
+        
+        selection = new ArrayList<String>();
+        
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, selection);
+        list.setAdapter(arrayAdapter);
+        if (extras.containsKey("search")) {
+        	TextView text = (TextView) findViewById(R.id.textView1);
+        	text.setVisibility(text.GONE);
+        	list.setClickable(true);
+        	list.setEnabled(true);
+        	list.setVisibility(list.VISIBLE);
+        	edit.setClickable(true);
+        	edit.setEnabled(true);
+        	edit.setVisibility(edit.VISIBLE);
+        	edit.setText("");
+        	final ArrayList<Integer> indexes = new ArrayList<Integer>();
+        	edit.addTextChangedListener(new TextWatcher() {
+
+				public void afterTextChanged(Editable s) {
+					selection.clear();
+					indexes.clear();
+					indexes.addAll(getPossibleSearches(s.toString()));
+					for (int i = 0; i < indexes.size(); i++) {
+						selection.add(teacherNamesPlain.get(indexes.get(i)));
+					}
+				}
+
+				public void beforeTextChanged(CharSequence s, int start,
+						int count, int after) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				public void onTextChanged(CharSequence s, int start,
+						int before, int count) {
+					// TODO Auto-generated method stub
+					
+				}
+        		
+        	});
+        	list.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
+
+				public void onItemClick(AdapterView<?> arg0, View arg1,
+						int arg2, long arg3) {
+					// TODO Auto-generated method stub
+					mapController.setCenter(teacherPositions.get(indexes.get(arg2)));
+					
+				}
+        		
+        	});
+        } else {
+        	list.setClickable(false);
+        	list.setEnabled(false);
+        	list.setVisibility(list.GONE);    
+        	edit.setClickable(false);
+        	edit.setEnabled(false);
+        	edit.setVisibility(edit.GONE);
+        }
         
         
         // This section makes the application load maps from assets folder
