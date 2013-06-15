@@ -21,9 +21,11 @@ public class SearchTree {
 	            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
 	}
 	
-	private String deleteRedundant(String s) {
+	private String normalize(String s) {
 		int pos = s.length()-1;
 		StringBuilder sb = new StringBuilder();
+		s = removeAccents(s);
+		s = s.toLowerCase();
 		sb.append(s);
 		while (pos >= 0) {
 			if ((sb.charAt(pos) < 'a') || (sb.charAt(pos) > 'z')) {
@@ -34,39 +36,65 @@ public class SearchTree {
 		return sb.toString();
 	}
 	
+	/*
+	 * Adds a search record into a tree (appends index of the record onto the right node)
+	 */
 	public void addRecord(String record, int index) {
 		int pos = 0;
-		record = removeAccents(record);
-		record = record.toLowerCase();
-		record = deleteRedundant(record);
-		Node actual = root;		
+		record = normalize(record);
+		Node current = root;		
 		
 		while (pos < record.length()) {
-			actual = actual.getChild(record.charAt(pos) - 'a');
+			current = current.getChild(record.charAt(pos) - 'a');
 			pos++;
 		}
-		actual.addIndex(index);
+		current.addIndex(index);
 	}
 	
 	public ArrayList<Integer> searchName(String name, int mistakes) {
 		
-		name = removeAccents(name);
-		name = name.toLowerCase();
-		name = deleteRedundant(name);
+		name = normalize(name);
 		
 		return search(name, mistakes, this.root);
 	}
-	
-	public ArrayList<Integer> suggestiveSearch(String name) {
-		
-		name = removeAccents(name);
-		name = name.toLowerCase();
-		name = deleteRedundant(name);
-	
-		return sugSearch(name, this.root);
-		
+
+	private ArrayList<Integer> getIndexesFromSubtree(Node sub) {
+		ArrayList<Integer> res = new ArrayList<Integer>();
+		res.addAll(sub.getIndexes());
+		for (int i = 0; i < 26; i++) {
+			if (sub.hasChild(i)) {
+				res.addAll(getIndexesFromSubtree(sub.getChild(i)));
+			}
+		}
+		return res;
 	}
 	
+	/*
+	 * Suggestive search, returns list of indexes matching the string
+	 * 
+	 * Algorithm gets to the node representing the end of the string
+	 * and returns all indexes in each node from its subtree
+	 */
+	public ArrayList<Integer> suggestiveSearch(String name) {
+		
+		name = normalize(name);
+	
+		int index = 0;
+		
+		Node currentNode = this.root;
+		
+		while (index < name.length()) {
+			if (currentNode.hasChild(name.charAt(index) - 'a')) {
+				currentNode = currentNode.getChild(name.charAt(index) - 'a');
+				index++;
+			} else {
+				return new ArrayList<Integer>();
+			}
+		}
+		
+		return getIndexesFromSubtree(currentNode);
+		
+	}
 	private ArrayList<Integer> sugSearch(String name, Node actual) {
 		
 		if (name.length() > 0) {
@@ -122,6 +150,10 @@ public class SearchTree {
 		return ret;
 	}
 	
+	/*
+	 * Every node represents one letter. String is represented by chain of Nodes, where every
+	 * successor is child of the predecessor.
+	 */
 	private class Node {
 		ArrayList<Node> nodes;
 		ArrayList<Integer> indexes;
@@ -136,27 +168,46 @@ public class SearchTree {
 			}
 		}
 		
+		/*
+		 * Returns true if this node has a child number n, false otherwise
+		 */
 		public boolean hasChild(int n) {
+			if ((n > 26) || (n < 0)) {
+				return false;
+			}
 			if (this.nodes.get(n) == null) {
 				return false;
 			}
 			return true;
 		}
 		
+		/*
+		 * Returns a child with desired number, creates new if necessary.
+		 * Returns null if desired number is out of range.
+		 */
 		public Node getChild(int n) {
+			if ((n > 26) || (n < 0)) {
+				return null;
+			}
 			if (this.nodes.get(n) == null) {
-				Node c = new Node(n, new ArrayList<Integer>());
-				this.nodes.set(n, c);
-				return c;
+				Node child = new Node(n, new ArrayList<Integer>());
+				this.nodes.set(n, child);
+				return child;
 			} else {
 				return this.nodes.get(n);
 			}
 		}
 		
+		/*
+		 * Adds a single index into the list of indexes on this node
+		 */
 		public void addIndex(int index) {
 			indexes.add(index);
 		}
 		
+		/*
+		 * Returns indexes on this node
+		 */
 		public ArrayList<Integer> getIndexes() {
 			return indexes;
 		}

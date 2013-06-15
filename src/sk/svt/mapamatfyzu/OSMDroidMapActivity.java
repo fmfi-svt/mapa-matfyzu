@@ -62,6 +62,9 @@ public class OSMDroidMapActivity extends Activity {
 	EditText edit;
 	ArrayList<String> selection; 
 	
+	/*
+	 * Parses the words divided by whitespaces in string into array of these words
+	 */
 	private ArrayList<String> parseString(String s) {
 		int index = 0;
 		ArrayList<String> res = new ArrayList<String>();
@@ -109,14 +112,13 @@ public class OSMDroidMapActivity extends Activity {
 		
 	}
 	
+	/*
+	 * Returns a list of teacher IDs, that match the searched string
+	 */
 	private ArrayList<Integer> getPossibleSearches(String search) {
 		
 		ArrayList<String> strings = parseString(search);
 		ArrayList<Integer> tmpindexes = new ArrayList<Integer>();
-		
-		// TextView text = (TextView) findViewById(R.id.textView1);
-		
-		// text.setText("");
 		
 		for (int i = 0; i < strings.size(); i++) {
 			tmpindexes.addAll(tree.suggestiveSearch(strings.get(i)));
@@ -139,15 +141,9 @@ public class OSMDroidMapActivity extends Activity {
 	/*
 	 * Consider only best matches	
 	 */
-		int maxcount = 0;
 		
 		for (int i = 0; i < forsort.size(); i++) {
-			if (maxcount < forsort.get(i).getKey()) {
-				maxcount = forsort.get(i).getKey();
-			}
-		}
-		for (int i = 0; i < forsort.size(); i++) {
-			if (forsort.get(i).getKey() == maxcount) {
+			if (forsort.get(i).getKey() >= strings.size()) {
 				res.add(forsort.get(i).getValue());
 			}
 		}
@@ -195,20 +191,6 @@ public class OSMDroidMapActivity extends Activity {
 			teacherNamesPlain.add(s);
 		}
 		
-		// Eventually, I was able to pass even ArrayLists, so this block is PROBABLY not needed anymore
-		/*	String[] names = extras.getStringArray("teacherNames"+counter);
-		while (names != null) {
-			names = (String[]) extras.getStringArray("teacherNames"+counter);
-			double[] positions = extras.getDoubleArray("teacherPositions"+counter);
-			ArrayList<String> tmpnames = new ArrayList<String>();
-			for (int j = 0; j < names.length; j++) {
-				tmpnames.add(names[j]);
-			}
-			teacherNames.add(tmpnames);
-			teacherPositions.add(new GeoPoint(positions[0], positions[1]));
-			counter++;
-		}
-		*/
 		// Rebuild the SearchTree
 		tree = new SearchTree();
 		
@@ -232,14 +214,16 @@ public class OSMDroidMapActivity extends Activity {
         
         mapView.getController().setCenter(new GeoPoint(48.151836,17.071214)); // Right upon FMFI UK
         
-        list = (ListView) findViewById(R.id.listView1);
-    	edit = (EditText) findViewById(R.id.editText1);
+        list = (ListView) findViewById(R.id.listView1); // List, where the results are displayed
+    	edit = (EditText) findViewById(R.id.editText1); // Search bar
         list.setAlpha((float) 1);
         
-        selection = new ArrayList<String>();
+        selection = new ArrayList<String>(); // Results matching the searched string
         
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, selection);
         list.setAdapter(arrayAdapter);
+        
+        // User wanted to search -> display search tools
         if (extras.containsKey("search")) {
         	TextView text = (TextView) findViewById(R.id.textView1);
         	text.setVisibility(text.GONE);
@@ -250,9 +234,10 @@ public class OSMDroidMapActivity extends Activity {
         	edit.setEnabled(true);
         	edit.setVisibility(edit.VISIBLE);
         	edit.setText("");
-        	final ArrayList<Integer> indexes = new ArrayList<Integer>();
+        	final ArrayList<Integer> indexes = new ArrayList<Integer>(); // IDs of teachers matching the string
         	edit.addTextChangedListener(new TextWatcher() {
 
+        		// Searched string has changed -> update the list
 				public void afterTextChanged(Editable s) {
 					selection.clear();
 					indexes.clear();
@@ -260,6 +245,7 @@ public class OSMDroidMapActivity extends Activity {
 					for (int i = 0; i < indexes.size(); i++) {
 						selection.add(teacherNamesPlain.get(indexes.get(i)));
 					}
+					list.refreshDrawableState();
 				}
 
 				public void beforeTextChanged(CharSequence s, int start,
