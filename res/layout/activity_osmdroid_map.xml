@@ -32,7 +32,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_below="@+id/editText1" >
+        android:layout_below="@+id/editText1"
+        >
 
     </ListView>
 
@@ -44,5 +45,25 @@
         android:layout_alignParentRight="true"
         android:layout_alignTop="@+id/osmmapview"
         android:ems="10" />
+
+    <Button
+        android:id="@+id/button_hide"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="35dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@+id/osmmapview"
+        android:text="@string/hide_search_sk" />
+
+    <Button
+        android:id="@+id/button_show"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="100dp"
+        android:layout_height="35dp"
+        android:layout_alignBottom="@+id/button_hide"
+        android:layout_alignTop="@+id/osmmapview"
+        android:layout_marginRight="0dp"
+        android:layout_toRightOf="@+id/textView1"
+        android:text="@string/show_search_sk" />
 
 </RelativeLayout>

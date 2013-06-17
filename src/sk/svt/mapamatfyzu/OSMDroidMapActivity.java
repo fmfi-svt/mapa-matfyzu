@@ -21,9 +21,11 @@ import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
+import org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener;
 import org.osmdroid.views.overlay.ItemizedOverlay;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.TilesOverlay;
+import org.osmdroid.views.overlay.OverlayItem.HotspotPlace;
 
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
@@ -38,9 +40,12 @@ import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -61,6 +66,11 @@ public class OSMDroidMapActivity extends Activity {
 	ListView list;
 	EditText edit;
 	ArrayList<String> selection; 
+	OnItemGestureListener<OverlayItem> gestureListener;
+	DefaultResourceProxyImpl defaultResourceProxyImpl;
+	Button hidePanelButton;
+	Button showPanelButton;
+	String lastSearch;
 	
 	/*
 	 * Parses the words divided by whitespaces in string into array of these words
@@ -167,6 +177,91 @@ public class OSMDroidMapActivity extends Activity {
 		return res;
 	}
 	
+	private void showSearchPanel() {
+		TextView text = (TextView) findViewById(R.id.textView1);
+    	text.setVisibility(text.GONE);
+    	showPanelButton.setVisibility(showPanelButton.GONE);
+    	showPanelButton.setClickable(false);
+    	showPanelButton.setEnabled(false);
+    	hidePanelButton.setVisibility(hidePanelButton.VISIBLE);
+    	hidePanelButton.setClickable(true);
+    	hidePanelButton.setEnabled(true);
+    	list.setClickable(true);
+    	list.setEnabled(true);
+    	list.setVisibility(list.VISIBLE);
+    	edit.setClickable(true);
+    	edit.setEnabled(true);
+    	edit.setVisibility(edit.VISIBLE);
+    	edit.setText(lastSearch);
+    	final ArrayList<Integer> indexes = new ArrayList<Integer>(); // IDs of teachers matching the string
+    	edit.addTextChangedListener(new TextWatcher() {
+
+    		// Searched string has changed -> update the list
+			public void afterTextChanged(Editable s) {
+				selection.clear();
+				indexes.clear();
+				indexes.addAll(getPossibleSearches(s.toString()));
+				ArrayList<OverlayItem> selectedPositions = new ArrayList<OverlayItem>();
+				
+				for (int i = 0; i < indexes.size(); i++) {
+					selection.add(teacherNamesPlain.get(indexes.get(i)));
+					selectedPositions.add(markers.get(indexes.get(i)));
+				}
+				if (myOverlay != null) {
+					mapView.getOverlays().remove(myOverlay);
+				}
+				myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+				mapView.getOverlays().add(myOverlay);
+				mapView.invalidate();
+				lastSearch = s.toString();
+				
+				list.refreshDrawableState();
+			}
+
+			public void beforeTextChanged(CharSequence s, int start,
+					int count, int after) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			public void onTextChanged(CharSequence s, int start,
+					int before, int count) {
+				// TODO Auto-generated method stub
+				
+			}
+    		
+    	});
+    	list.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
+
+			public void onItemClick(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				// TODO Auto-generated method stub
+				mapController.setCenter(teacherPositions.get(indexes.get(arg2)));
+				
+			}
+    		
+    	});
+    	mapView.invalidate();
+	}
+	
+	private void hideSearchPanel() {
+    	list.setClickable(false);
+    	list.setEnabled(false);
+    	list.setVisibility(list.GONE);    
+    	edit.setClickable(false);
+    	edit.setEnabled(false);
+    	edit.setVisibility(edit.GONE);
+    	TextView text = (TextView) findViewById(R.id.textView1);
+    	text.setVisibility(text.VISIBLE);
+    	hidePanelButton.setVisibility(hidePanelButton.GONE);
+    	hidePanelButton.setClickable(false);
+    	hidePanelButton.setEnabled(false);
+    	showPanelButton.setEnabled(true);
+    	showPanelButton.setClickable(true);
+    	showPanelButton.setVisibility(showPanelButton.VISIBLE);
+    	mapView.invalidate();
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -216,6 +311,24 @@ public class OSMDroidMapActivity extends Activity {
         
         list = (ListView) findViewById(R.id.listView1); // List, where the results are displayed
     	edit = (EditText) findViewById(R.id.editText1); // Search bar
+    	lastSearch = "";
+    	hidePanelButton = (Button) findViewById(R.id.button_hide);
+    	hidePanelButton.setOnClickListener(new OnClickListener() {
+    		
+    		public void onClick(View v) {
+    			hideSearchPanel();
+    		}
+    		
+    	});
+    	
+    	showPanelButton = (Button) findViewById(R.id.button_show);
+    	showPanelButton.setOnClickListener(new OnClickListener() {
+    		
+    		public void onClick(View v) {
+    			showSearchPanel();
+    		}
+    	});
+    	
         list.setAlpha((float) 1);
         
         selection = new ArrayList<String>(); // Results matching the searched string
@@ -225,59 +338,9 @@ public class OSMDroidMapActivity extends Activity {
         
         // User wanted to search -> display search tools
         if (extras.containsKey("search")) {
-        	TextView text = (TextView) findViewById(R.id.textView1);
-        	text.setVisibility(text.GONE);
-        	list.setClickable(true);
-        	list.setEnabled(true);
-        	list.setVisibility(list.VISIBLE);
-        	edit.setClickable(true);
-        	edit.setEnabled(true);
-        	edit.setVisibility(edit.VISIBLE);
-        	edit.setText("");
-        	final ArrayList<Integer> indexes = new ArrayList<Integer>(); // IDs of teachers matching the string
-        	edit.addTextChangedListener(new TextWatcher() {
-
-        		// Searched string has changed -> update the list
-				public void afterTextChanged(Editable s) {
-					selection.clear();
-					indexes.clear();
-					indexes.addAll(getPossibleSearches(s.toString()));
-					for (int i = 0; i < indexes.size(); i++) {
-						selection.add(teacherNamesPlain.get(indexes.get(i)));
-					}
-					list.refreshDrawableState();
-				}
-
-				public void beforeTextChanged(CharSequence s, int start,
-						int count, int after) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				public void onTextChanged(CharSequence s, int start,
-						int before, int count) {
-					// TODO Auto-generated method stub
-					
-				}
-        		
-        	});
-        	list.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
-
-				public void onItemClick(AdapterView<?> arg0, View arg1,
-						int arg2, long arg3) {
-					// TODO Auto-generated method stub
-					mapController.setCenter(teacherPositions.get(indexes.get(arg2)));
-					
-				}
-        		
-        	});
+        	showSearchPanel();
         } else {
-        	list.setClickable(false);
-        	list.setEnabled(false);
-        	list.setVisibility(list.GONE);    
-        	edit.setClickable(false);
-        	edit.setEnabled(false);
-        	edit.setVisibility(edit.GONE);
+        	hideSearchPanel();
         }
         
         
@@ -291,15 +354,10 @@ public class OSMDroidMapActivity extends Activity {
         TilesOverlay tilesOverlay = new TilesOverlay(tileProviderArray, getApplicationContext());
 		tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
         mapView.getOverlays().add(tilesOverlay);
-       
-              
-        
-        
-        //mapView.setUseDataConnection(false); //Setting to false will make the device load from external storage
         
         // Simple overlay
         markers = new ArrayList<OverlayItem>();
-        DefaultResourceProxyImpl defaultResourceProxyImpl = new DefaultResourceProxyImpl(this);
+        defaultResourceProxyImpl = new DefaultResourceProxyImpl(this);
         
         for (int i = 0; i < teacherNames.size(); i++) {
         	String tmp = "";
@@ -308,25 +366,17 @@ public class OSMDroidMapActivity extends Activity {
         		tmp+= teacherNames.get(i).get(j)+" ";
         	}
         	OverlayItem oitem = new OverlayItem(tmp, teacherNames.get(i).get(teacherNames.get(i).size()-1),  teacherPositions.get(i));
-        	oitem.setMarker(this.getResources().getDrawable(R.drawable.marker));
+        	oitem.setMarkerHotspot(HotspotPlace.CENTER);
+        	oitem.setMarker(this.getResources().getDrawable(R.drawable.blue_dot5));
         	markers.add(oitem);
         }
-     // Old testing markers
-     /*   OverlayItem majak = new OverlayItem("Kancelaria", "Majakova kancelaria", new GeoPoint(48.152312,17.069064));
-        majak.setMarker(this.getResources().getDrawable(R.drawable.marker_default));
         
-        OverlayItem vchod = new OverlayItem("Vchod", "Vchod do matickeho pavilonu", new GeoPoint(48.152312,17.070798));
-        vchod.setMarker(this.getResources().getDrawable(R.drawable.marker));
-     
-        markers.add(majak);
-        markers.add(vchod);
-    */
-        this.myOverlay = new ItemizedIconOverlay<OverlayItem>(markers, new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
+        gestureListener = new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
 
 			public boolean onItemLongPress(int arg0, OverlayItem arg1) {
 				Toast.makeText(
                         OSMDroidMapActivity.this,
-                        arg1.mDescription, Toast.LENGTH_LONG).show();
+                        arg1.mDescription, Toast.LENGTH_SHORT).show();
 				return false;
 			}
 
@@ -337,15 +387,14 @@ public class OSMDroidMapActivity extends Activity {
 				return false;
 			}
 
-        }, defaultResourceProxyImpl);
-        mapView.getOverlays().add(this.myOverlay);        
-        
+        };
+         
     	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
     	mapView.invalidate();
-    	
+    	/*
     	TextView text = (TextView) findViewById(R.id.textView1);
     	text.setText(""+markers.get(0).getPoint().getLatitudeE6()/1E6+"\n " + markers.get(0).getPoint().getLongitudeE6()/1E6);
-    	
+    	*/
 	}
 
 	@Override

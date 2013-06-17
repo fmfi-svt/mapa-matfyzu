@@ -134,5 +134,14 @@ public class MainActivity extends Activity {
     		startActivity(intent);
     		
     	}
+    	if (view.getId() == R.id.button_edit) {
+    		Intent intent = new Intent(this, OSMDroidMapActivity.class);
+    		intent.putExtra("edit", 1);
+    		for (int i = 0; i < teacherNames.size(); i++) {
+    			intent.putExtra("teacherNames", teacherNames);
+    			intent.putExtra("teacherPositions", teacherPositions);
+    		}
+    		startActivity(intent);
+    	}
     }
 }

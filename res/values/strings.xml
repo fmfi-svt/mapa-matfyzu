@@ -7,7 +7,7 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="button_google_map_sk">Pohyb po mape (Google)</string>
     <string name="search_teacher_sk">Vyhľadanie učiteľa</string>
-    <string name="search_room_sk">Vyhľadanie miestnosti</string>
+    <string name="search_room_sk">Úprava dát</string>
     <string name="google_map_preview_sk">Google Mapa</string>
     <string name="map_api_key">ENTER KEY</string>
     <string name="title_activity_osmdroid_map">OSMDroidMapActivity</string>
@@ -18,5 +18,9 @@
     <color name="black">#000000</color>
 
     <string name="title_activity_sample">Sample</string>
+
+    <string name="hide_search_sk">Skryť</string>
+
+    <string name="show_search_sk">Vyhľadať</string>
 
 </resources>
