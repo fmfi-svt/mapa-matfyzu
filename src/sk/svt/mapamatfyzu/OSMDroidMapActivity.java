@@ -57,6 +57,8 @@ public class OSMDroidMapActivity extends Activity {
 	MapController mapController;
 	GeoPoint BorderLeftTop = new GeoPoint(48.153060, 17.066788);
 	GeoPoint BorderRightBottom = new GeoPoint(48.149180, 17.072130);
+	ArrayList<ArrayList< GeoPoint > > floors;
+	ArrayList<String> floorsNumbers;
 	ArrayList<OverlayItem> markers;
 	ItemizedOverlay<OverlayItem> myOverlay;
 	ArrayList<ArrayList<String> > teacherNames;
@@ -64,13 +66,16 @@ public class OSMDroidMapActivity extends Activity {
 	ArrayList<GeoPoint> teacherPositions;	
 	SearchTree tree;
 	ListView list;
+	ListView floorList;
 	EditText edit;
 	ArrayList<String> selection; 
 	OnItemGestureListener<OverlayItem> gestureListener;
 	DefaultResourceProxyImpl defaultResourceProxyImpl;
 	Button hidePanelButton;
 	Button showPanelButton;
+	Button floorButton;
 	String lastSearch;
+	int currentFloor;
 	
 	/*
 	 * Parses the words divided by whitespaces in string into array of these words
@@ -186,6 +191,9 @@ public class OSMDroidMapActivity extends Activity {
     	hidePanelButton.setVisibility(hidePanelButton.VISIBLE);
     	hidePanelButton.setClickable(true);
     	hidePanelButton.setEnabled(true);
+    	floorButton.setVisibility(floorButton.GONE);
+    	floorButton.setClickable(false);
+    	floorButton.setEnabled(false);
     	list.setClickable(true);
     	list.setEnabled(true);
     	list.setVisibility(list.VISIBLE);
@@ -259,6 +267,9 @@ public class OSMDroidMapActivity extends Activity {
     	showPanelButton.setEnabled(true);
     	showPanelButton.setClickable(true);
     	showPanelButton.setVisibility(showPanelButton.VISIBLE);
+    	floorButton.setVisibility(floorButton.VISIBLE);
+    	floorButton.setClickable(true);
+    	floorButton.setEnabled(true);
     	mapView.invalidate();
 	}
 	
@@ -268,6 +279,23 @@ public class OSMDroidMapActivity extends Activity {
 		Intent intent = this.getIntent();
 		Bundle extras = intent.getExtras();
 		super.onCreate(savedInstanceState);
+		
+		ArrayList<GeoPoint> tmpgp = new ArrayList<GeoPoint>();
+		floors = new ArrayList< ArrayList < GeoPoint> >();
+		tmpgp.add(BorderLeftTop);
+		tmpgp.add(BorderRightBottom);
+		floors.add(tmpgp);
+		tmpgp = new ArrayList<GeoPoint>();
+		tmpgp.add(new GeoPoint(48.3,17.2));
+		tmpgp.add(new GeoPoint(48.292,17.207));
+		floors.add(tmpgp);
+		tmpgp = new ArrayList<GeoPoint>();
+		tmpgp.add(new GeoPoint(48.2,17.1));
+		tmpgp.add(new GeoPoint(48.192, 17.107));
+		floors.add(tmpgp);
+		
+		floorsNumbers = new ArrayList<String>( Arrays.asList("Prízemie","2.","3."));
+		currentFloor = 0;
 		
 		int counter = 0;
 		teacherNames = new ArrayList<ArrayList<String>>();
@@ -329,6 +357,49 @@ public class OSMDroidMapActivity extends Activity {
     		}
     	});
     	
+    	floorButton = (Button) findViewById(R.id.button_floor);
+    	floorButton.setOnClickListener(new OnClickListener(){
+    		
+    		public void onClick(View v) {
+    			if (floorList.isClickable()) {
+    				floorList.setClickable(false);
+    				floorList.setActivated(false);
+    				floorList.setVisibility(floorList.GONE);
+    			} else {
+    				floorList.setClickable(true);
+    				floorList.setActivated(true);
+    				floorList.setVisibility(floorList.VISIBLE);
+    			}
+    		}
+    		
+    	});
+    	
+    	floorList = (ListView) findViewById(R.id.listView2);
+		floorList.setClickable(false);
+		floorList.setActivated(false);
+		floorList.setVisibility(floorList.GONE);
+		
+		floorList.setAlpha((float) 1);
+		floorList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, floorsNumbers));
+		floorList.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
+
+			public void onItemClick(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
+				// TODO Auto-generated method stub
+				mapView.setScrollableAreaLimit(new BoundingBoxE6(floors.get(arg2).get(0).getLatitudeE6(), floors.get(arg2).get(1).getLongitudeE6(),
+						floors.get(arg2).get(1).getLatitudeE6(), floors.get(arg2).get(0).getLongitudeE6()));
+
+				GeoPoint Middle = (GeoPoint) mapView.getProjection().fromPixels(mapView.getWidth()/2, mapView.getHeight()/2);
+				mapController.setCenter(new GeoPoint(floors.get(arg2).get(0).getLatitudeE6() + Middle.getLatitudeE6() - floors.get(currentFloor).get(0).getLatitudeE6(),
+						floors.get(arg2).get(0).getLongitudeE6() + Middle.getLongitudeE6() - floors.get(currentFloor).get(0).getLongitudeE6()));
+				mapView.invalidate();
+				currentFloor = arg2;
+				floorList.setClickable(false);
+				floorList.setActivated(false);
+				floorList.setVisibility(floorList.GONE);
+			}
+    		
+    	});
         list.setAlpha((float) 1);
         
         selection = new ArrayList<String>(); // Results matching the searched string
