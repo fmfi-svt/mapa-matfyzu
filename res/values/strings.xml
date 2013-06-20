@@ -4,7 +4,7 @@
     <string name="app_name">Mapa Matfyzu</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">Mapa Matfyzu</string>
     <string name="button_google_map_sk">Pohyb po mape (Google)</string>
     <string name="search_teacher_sk">Vyhľadanie učiteľa</string>
     <string name="search_room_sk">Úprava dát</string>
@@ -23,6 +23,6 @@
 
     <string name="show_search_sk">Vyhľadať</string>
 
-    <string name="button_floor_sk">Podlažie</string>
+    <string name="button_floor_sk">Poschodie</string>
 
 </resources>

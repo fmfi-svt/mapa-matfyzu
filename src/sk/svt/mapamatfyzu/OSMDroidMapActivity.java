@@ -36,12 +36,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
 import android.view.Window;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
@@ -71,11 +74,14 @@ public class OSMDroidMapActivity extends Activity {
 	ArrayList<String> selection; 
 	OnItemGestureListener<OverlayItem> gestureListener;
 	DefaultResourceProxyImpl defaultResourceProxyImpl;
-	Button hidePanelButton;
-	Button showPanelButton;
+//	Button hidePanelButton;
+//	Button showPanelButton;
 	Button floorButton;
 	String lastSearch;
 	int currentFloor;
+	boolean consumeNextClick;
+	final ArrayList<Integer> indexes = new ArrayList<Integer>();
+	InputMethodManager imm;
 	
 	/*
 	 * Parses the words divided by whitespaces in string into array of these words
@@ -185,15 +191,17 @@ public class OSMDroidMapActivity extends Activity {
 	private void showSearchPanel() {
 		TextView text = (TextView) findViewById(R.id.textView1);
     	text.setVisibility(text.GONE);
-    	showPanelButton.setVisibility(showPanelButton.GONE);
+    	
+    /*	showPanelButton.setVisibility(showPanelButton.GONE);
     	showPanelButton.setClickable(false);
     	showPanelButton.setEnabled(false);
     	hidePanelButton.setVisibility(hidePanelButton.VISIBLE);
     	hidePanelButton.setClickable(true);
     	hidePanelButton.setEnabled(true);
-    	floorButton.setVisibility(floorButton.GONE);
-    	floorButton.setClickable(false);
-    	floorButton.setEnabled(false);
+    */
+    	floorButton.setVisibility(floorButton.VISIBLE);
+    	floorButton.setClickable(true);
+    	floorButton.setEnabled(true);
     	list.setClickable(true);
     	list.setEnabled(true);
     	list.setVisibility(list.VISIBLE);
@@ -201,7 +209,6 @@ public class OSMDroidMapActivity extends Activity {
     	edit.setEnabled(true);
     	edit.setVisibility(edit.VISIBLE);
     	edit.setText(lastSearch);
-    	final ArrayList<Integer> indexes = new ArrayList<Integer>(); // IDs of teachers matching the string
     	edit.addTextChangedListener(new TextWatcher() {
 
     		// Searched string has changed -> update the list
@@ -244,7 +251,23 @@ public class OSMDroidMapActivity extends Activity {
 			public void onItemClick(AdapterView<?> arg0, View arg1,
 					int arg2, long arg3) {
 				// TODO Auto-generated method stub
+				GeoPoint Middle = teacherPositions.get(indexes.get(arg2));
+				for (int i = 0; i < floors.size(); i++) {
+					GeoPoint tmpLT = floors.get(i).get(0);
+					GeoPoint tmpRB = floors.get(i).get(1);
+					if ((Middle.getLatitudeE6() < tmpLT.getLatitudeE6()) && (Middle.getLongitudeE6() > tmpLT.getLongitudeE6()) &&
+							(tmpRB.getLatitudeE6() < Middle.getLatitudeE6()) && (tmpRB.getLongitudeE6() > Middle.getLongitudeE6())) {
+						mapView.setScrollableAreaLimit(new BoundingBoxE6(tmpLT.getLatitudeE6(), tmpRB.getLongitudeE6(),
+						tmpRB.getLatitudeE6(), tmpLT.getLongitudeE6()));
+						break;
+					}
+				}
 				mapController.setCenter(teacherPositions.get(indexes.get(arg2)));
+				edit.setText(teacherNamesPlain.get(indexes.get(arg2)));
+    			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+				list.setVisibility(list.GONE);
+				list.setEnabled(false);
+				list.setActivated(false);				
 				
 			}
     		
@@ -261,18 +284,28 @@ public class OSMDroidMapActivity extends Activity {
     	edit.setVisibility(edit.GONE);
     	TextView text = (TextView) findViewById(R.id.textView1);
     	text.setVisibility(text.VISIBLE);
-    	hidePanelButton.setVisibility(hidePanelButton.GONE);
+    	
+    /*	hidePanelButton.setVisibility(hidePanelButton.GONE);
     	hidePanelButton.setClickable(false);
     	hidePanelButton.setEnabled(false);
     	showPanelButton.setEnabled(true);
     	showPanelButton.setClickable(true);
     	showPanelButton.setVisibility(showPanelButton.VISIBLE);
+   */
     	floorButton.setVisibility(floorButton.VISIBLE);
     	floorButton.setClickable(true);
     	floorButton.setEnabled(true);
     	mapView.invalidate();
 	}
 	
+	synchronized private void setConsumeNextClick(boolean b) {
+		consumeNextClick = b;
+	}
+	
+	synchronized private boolean getConsumeNextClick() {
+		return consumeNextClick;
+	}
+ 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -294,7 +327,7 @@ public class OSMDroidMapActivity extends Activity {
 		tmpgp.add(new GeoPoint(48.192, 17.107));
 		floors.add(tmpgp);
 		
-		floorsNumbers = new ArrayList<String>( Arrays.asList("Prízemie","2.","3."));
+		floorsNumbers = new ArrayList<String>( Arrays.asList("Prízemie","1.","2."));
 		currentFloor = 0;
 		
 		int counter = 0;
@@ -325,7 +358,15 @@ public class OSMDroidMapActivity extends Activity {
 		}
 				
         setContentView(R.layout.activity_osmdroid_map); 
+        list = (ListView) findViewById(R.id.listView1); // List, where the results are displayed
+    	edit = (EditText) findViewById(R.id.editText1); // Search bar
+    	floorButton = (Button) findViewById(R.id.button_floor); // Button for selecting floors
+		imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+    //	hidePanelButton = (Button) findViewById(R.id.button_hide);
+    //	showPanelButton = (Button) findViewById(R.id.button_show);
         
+    	consumeNextClick = false;
+    	
         this.mapView = (BoundedMapView) findViewById(R.id.osmmapview);
         	
         this.mapController = mapView.getController();
@@ -334,13 +375,45 @@ public class OSMDroidMapActivity extends Activity {
         mapView.setMultiTouchControls(true);
         
         mapView.getController().setZoom(16);
+        mapView.setOnClickListener(new OnClickListener() {
+
+			public void onClick(View v) {
+    			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+				list.setVisibility(list.GONE);
+				list.setEnabled(false);
+				list.setActivated(false);
+			}
+        	
+        });
+        
+        edit.setOnClickListener(new OnClickListener() {
+        	
+        	public void onClick(View v) {
+        		imm.showSoftInput(edit, 0);
+				list.setVisibility(list.VISIBLE);
+				list.setEnabled(true);
+				list.setActivated(true);
+				floorList.setClickable(false);
+				floorList.setActivated(false);
+				floorList.setVisibility(floorList.GONE);
+        	}
+        	
+        });
         
         mapView.getController().setCenter(new GeoPoint(48.151836,17.071214)); // Right upon FMFI UK
         
-        list = (ListView) findViewById(R.id.listView1); // List, where the results are displayed
-    	edit = (EditText) findViewById(R.id.editText1); // Search bar
     	lastSearch = "";
-    	hidePanelButton = (Button) findViewById(R.id.button_hide);
+    	
+    /*	hidePanelButton.setVisibility(hidePanelButton.GONE);
+    	hidePanelButton.setActivated(false);
+    	hidePanelButton.setEnabled(false);
+    	showPanelButton.setVisibility(showPanelButton.GONE);
+    	showPanelButton.setClickable(false);
+    	showPanelButton.setEnabled(false);
+    */	
+    	showSearchPanel();
+    	
+    	/*
     	hidePanelButton.setOnClickListener(new OnClickListener() {
     		
     		public void onClick(View v) {
@@ -349,19 +422,21 @@ public class OSMDroidMapActivity extends Activity {
     		
     	});
     	
-    	showPanelButton = (Button) findViewById(R.id.button_show);
     	showPanelButton.setOnClickListener(new OnClickListener() {
     		
     		public void onClick(View v) {
     			showSearchPanel();
     		}
     	});
-    	
-    	floorButton = (Button) findViewById(R.id.button_floor);
+    	*/
     	floorButton.setOnClickListener(new OnClickListener(){
     		
     		public void onClick(View v) {
-    			if (floorList.isClickable()) {
+    			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+				list.setVisibility(list.GONE);
+				list.setEnabled(false);
+				list.setActivated(false);    			
+				if (floorList.isClickable()) {
     				floorList.setClickable(false);
     				floorList.setActivated(false);
     				floorList.setVisibility(floorList.GONE);
@@ -408,12 +483,15 @@ public class OSMDroidMapActivity extends Activity {
         list.setAdapter(arrayAdapter);
         
         // User wanted to search -> display search tools
+        /*
+        
         if (extras.containsKey("search")) {
         	showSearchPanel();
         } else {
         	hideSearchPanel();
         }
         
+        */
         
         // This section makes the application load maps from assets folder
         final AssetsTileSource ASSETS_TILE_SOURCE = new AssetsTileSource(this.getAssets(), "Map",  ResourceProxy.string.offline_mode, 14, 18, 256, ".png"); // This will load from assets/Map/14/xxxx/yyyyy.png

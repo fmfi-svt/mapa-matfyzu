@@ -3,7 +3,8 @@
     android:id="@+id/RelativeLayout2"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black" >
+    android:background="@color/black" 
+    android:focusableInTouchMode="true">
 
 	<sk.svt.mapamatfyzu.BoundedMapView
         xmlns:android="http://schemas.android.com/apk/res/android"
@@ -42,45 +43,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
         android:layout_alignTop="@+id/osmmapview"
-        android:ems="10" />
-
-    <Button
-        android:id="@+id/button_hide"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="35dp"
-        android:layout_alignParentRight="true"
-        android:layout_alignTop="@+id/osmmapview"
-        android:text="@string/hide_search_sk" />
-
-    <Button
-        android:id="@+id/button_show"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="100dp"
-        android:layout_height="35dp"
-        android:layout_above="@+id/listView1"
-        android:layout_alignParentRight="true"
-        android:layout_alignTop="@+id/osmmapview"
-        android:text="@string/show_search_sk" />
+        android:layout_toLeftOf="@+id/button_floor"
+        android:ems="10"
+        android:singleLine="true" />
 
     <Button
         android:id="@+id/button_floor"
         style="?android:attr/buttonStyleSmall"
         android:layout_width="100dp"
         android:layout_height="35dp"
-        android:layout_alignBottom="@+id/button_hide"
-        android:layout_alignParentLeft="true"
-        android:layout_alignTop="@+id/osmmapview"
+        android:layout_alignBaseline="@+id/editText1"
+        android:layout_alignBottom="@+id/editText1"
+        android:layout_alignParentRight="true"
         android:text="@string/button_floor_sk" />
 
     <ListView
         android:id="@+id/listView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignRight="@+id/button_floor"
+        android:layout_alignLeft="@+id/button_floor"
         android:layout_below="@+id/button_floor" >
 
     </ListView>
