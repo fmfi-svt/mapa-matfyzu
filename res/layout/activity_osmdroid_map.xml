@@ -67,4 +67,12 @@
 
     </ListView>
 
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/osmmapview"
+        android:layout_alignTop="@+id/osmmapview"
+        android:src="@drawable/blue_dot5" />
+
 </RelativeLayout>

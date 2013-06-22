@@ -3,6 +3,7 @@ package sk.svt.mapamatfyzu;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -35,14 +36,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
+import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -50,7 +56,10 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,10 +72,17 @@ public class OSMDroidMapActivity extends Activity {
 	ArrayList<ArrayList< GeoPoint > > floors;
 	ArrayList<String> floorsNumbers;
 	ArrayList<OverlayItem> markers;
+	Drawable marker;
 	ItemizedOverlay<OverlayItem> myOverlay;
 	ArrayList<ArrayList<String> > teacherNames;
 	ArrayList<String> teacherNamesPlain;
 	ArrayList<GeoPoint> teacherPositions;	
+	ArrayList<Integer> alive = new ArrayList<Integer>();
+	ArrayList<OverlayItem> selectedPositions = new ArrayList<OverlayItem>();
+	OverlayItem movedItem = null;
+	boolean movedItemPinned = true;
+	ImageView movedImage;
+	long pressTime = 0;
 	SearchTree tree;
 	ListView list;
 	ListView floorList;
@@ -74,14 +90,13 @@ public class OSMDroidMapActivity extends Activity {
 	ArrayList<String> selection; 
 	OnItemGestureListener<OverlayItem> gestureListener;
 	DefaultResourceProxyImpl defaultResourceProxyImpl;
-//	Button hidePanelButton;
-//	Button showPanelButton;
 	Button floorButton;
 	String lastSearch;
 	int currentFloor;
 	boolean consumeNextClick;
 	final ArrayList<Integer> indexes = new ArrayList<Integer>();
 	InputMethodManager imm;
+	boolean editMode;
 	
 	/*
 	 * Parses the words divided by whitespaces in string into array of these words
@@ -159,9 +174,8 @@ public class OSMDroidMapActivity extends Activity {
 			}
 			forsort.add(new Pair(count, value));
 		}
-	/*
-	 * Consider only best matches	
-	 */
+	
+	 // Consider only best matches		 
 		
 		for (int i = 0; i < forsort.size(); i++) {
 			if (forsort.get(i).getKey() >= strings.size()) {
@@ -169,22 +183,6 @@ public class OSMDroidMapActivity extends Activity {
 			}
 		}
 		
-/*
- *  Another algorithm, considers even non-perfect matches		
- *  
-		Pair indexes[] = new Pair[forsort.size()];
-		
-		for (int i = 0; i < forsort.size(); i++) {
-			indexes[i] = forsort.get(i);
-		}
-		
-		
-		Arrays.sort(indexes);
-		
-		for (int i = forsort.size()-1; i >= 0; i--) {
-			res.add(indexes[i].getValue());
-		}
-*/
 		return res;
 	}
 	
@@ -199,15 +197,9 @@ public class OSMDroidMapActivity extends Activity {
     	hidePanelButton.setClickable(true);
     	hidePanelButton.setEnabled(true);
     */
-    	floorButton.setVisibility(floorButton.VISIBLE);
-    	floorButton.setClickable(true);
-    	floorButton.setEnabled(true);
-    	list.setClickable(true);
-    	list.setEnabled(true);
-    	list.setVisibility(list.VISIBLE);
-    	edit.setClickable(true);
-    	edit.setEnabled(true);
-    	edit.setVisibility(edit.VISIBLE);
+    	showView(floorButton);
+    	showView(list);
+    	showView(edit);
     	edit.setText(lastSearch);
     	edit.addTextChangedListener(new TextWatcher() {
 
@@ -216,11 +208,13 @@ public class OSMDroidMapActivity extends Activity {
 				selection.clear();
 				indexes.clear();
 				indexes.addAll(getPossibleSearches(s.toString()));
-				ArrayList<OverlayItem> selectedPositions = new ArrayList<OverlayItem>();
+				selectedPositions.clear();
 				
 				for (int i = 0; i < indexes.size(); i++) {
-					selection.add(teacherNamesPlain.get(indexes.get(i)));
-					selectedPositions.add(markers.get(indexes.get(i)));
+					if (alive.get(indexes.get(i)) == 1) {
+						selection.add(teacherNamesPlain.get(indexes.get(i)));
+						selectedPositions.add(markers.get(indexes.get(i)));	
+					}
 				}
 				if (myOverlay != null) {
 					mapView.getOverlays().remove(myOverlay);
@@ -251,6 +245,16 @@ public class OSMDroidMapActivity extends Activity {
 			public void onItemClick(AdapterView<?> arg0, View arg1,
 					int arg2, long arg3) {
 				// TODO Auto-generated method stub
+				int counter = 0;
+				for (int i = 0; i < indexes.size(); i++) {
+					if (alive.get(indexes.get(i)) == 1) {
+						counter++;
+						if (counter == arg2+1) {
+							arg2 = i;
+							break;
+						}
+					}
+				}
 				GeoPoint Middle = teacherPositions.get(indexes.get(arg2));
 				for (int i = 0; i < floors.size(); i++) {
 					GeoPoint tmpLT = floors.get(i).get(0);
@@ -263,12 +267,11 @@ public class OSMDroidMapActivity extends Activity {
 					}
 				}
 				mapController.setCenter(teacherPositions.get(indexes.get(arg2)));
-				edit.setText(teacherNamesPlain.get(indexes.get(arg2)));
+				StringBuilder tmpname = new StringBuilder(teacherNamesPlain.get(indexes.get(arg2)));
+				tmpname.delete(tmpname.lastIndexOf(" "), tmpname.length());
+				edit.setText(tmpname.toString());
     			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
-				list.setVisibility(list.GONE);
-				list.setEnabled(false);
-				list.setActivated(false);				
-				
+    			hideView(list);
 			}
     		
     	});
@@ -276,13 +279,9 @@ public class OSMDroidMapActivity extends Activity {
 	}
 	
 	private void hideSearchPanel() {
-    	list.setClickable(false);
-    	list.setEnabled(false);
-    	list.setVisibility(list.GONE);    
-    	edit.setClickable(false);
-    	edit.setEnabled(false);
-    	edit.setVisibility(edit.GONE);
-    	TextView text = (TextView) findViewById(R.id.textView1);
+		hideView(list);
+		hideView(edit);
+		TextView text = (TextView) findViewById(R.id.textView1);
     	text.setVisibility(text.VISIBLE);
     	
     /*	hidePanelButton.setVisibility(hidePanelButton.GONE);
@@ -292,20 +291,23 @@ public class OSMDroidMapActivity extends Activity {
     	showPanelButton.setClickable(true);
     	showPanelButton.setVisibility(showPanelButton.VISIBLE);
    */
-    	floorButton.setVisibility(floorButton.VISIBLE);
-    	floorButton.setClickable(true);
-    	floorButton.setEnabled(true);
+    	showView(floorButton);
     	mapView.invalidate();
 	}
 	
-	synchronized private void setConsumeNextClick(boolean b) {
-		consumeNextClick = b;
+	private void showView(View v) {
+		v.setVisibility(v.VISIBLE);
+		v.setClickable(true);
+		v.setActivated(true);
+		v.setEnabled(true);
 	}
-	
-	synchronized private boolean getConsumeNextClick() {
-		return consumeNextClick;
+	private void hideView(View v) {
+		v.setVisibility(v.GONE);
+		v.setClickable(false);
+		v.setActivated(false);
+		v.setEnabled(false);
 	}
- 	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -319,7 +321,7 @@ public class OSMDroidMapActivity extends Activity {
 		tmpgp.add(BorderRightBottom);
 		floors.add(tmpgp);
 		tmpgp = new ArrayList<GeoPoint>();
-		tmpgp.add(new GeoPoint(48.3,17.2));
+		tmpgp.add(new GeoPoint(48.3,17.2));	
 		tmpgp.add(new GeoPoint(48.292,17.207));
 		floors.add(tmpgp);
 		tmpgp = new ArrayList<GeoPoint>();
@@ -330,7 +332,7 @@ public class OSMDroidMapActivity extends Activity {
 		floorsNumbers = new ArrayList<String>( Arrays.asList("Prízemie","1.","2."));
 		currentFloor = 0;
 		
-		int counter = 0;
+		marker = this.getResources().getDrawable(R.drawable.blue_dot5);
 		teacherNames = new ArrayList<ArrayList<String>>();
 		teacherPositions = new ArrayList<GeoPoint>();
 		teacherNamesPlain = new ArrayList<String>();
@@ -345,6 +347,7 @@ public class OSMDroidMapActivity extends Activity {
 			}
 			s += "(" + teacherNames.get(i).get(teacherNames.get(i).size()-1) + ")";
 			teacherNamesPlain.add(s);
+			alive.add(1);
 		}
 		
 		// Rebuild the SearchTree
@@ -362,40 +365,144 @@ public class OSMDroidMapActivity extends Activity {
     	edit = (EditText) findViewById(R.id.editText1); // Search bar
     	floorButton = (Button) findViewById(R.id.button_floor); // Button for selecting floors
 		imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+		movedImage = (ImageView) findViewById(R.id.imageView1);
+		movedImage.setVisibility(movedImage.GONE);
+		
     //	hidePanelButton = (Button) findViewById(R.id.button_hide);
     //	showPanelButton = (Button) findViewById(R.id.button_show);
+
+        editMode = false;
         
-    	consumeNextClick = false;
+        if (extras.containsKey("edit")) {
+        // User wants to edit data
+        	editMode = true;
+        }
     	
         this.mapView = (BoundedMapView) findViewById(R.id.osmmapview);
         	
         this.mapController = mapView.getController();
         
-        mapView.setBuiltInZoomControls(true);
+    //    mapView.setBuiltInZoomControls(true);
         mapView.setMultiTouchControls(true);
         
         mapView.getController().setZoom(16);
-        mapView.setOnClickListener(new OnClickListener() {
+/*        mapView.setOnClickListener(new OnClickListener() {
 
 			public void onClick(View v) {
-    			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
-				list.setVisibility(list.GONE);
-				list.setEnabled(false);
-				list.setActivated(false);
+    			
 			}
         	
         });
+        */
+        mapView.setOnTouchListener(new OnTouchListener() {
+			
+			public boolean onTouch(View v, MotionEvent event) {
+				// TODO Auto-generated method stub
+				boolean result = false;
+				if (event.getAction() == MotionEvent.ACTION_DOWN) {
+					imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+					hideView(list);	
+					result = true;
+				}
+				
+				Log.d("Touch Event", "Any");
+				
+				int x = (int)event.getX();
+				int y = (int)event.getY();
+				
+				if (y < 0) y = 0;
+				if (x < 0) x = 0;
+				
+				if (editMode) {
+					if (event.getAction() == MotionEvent.ACTION_DOWN) {
+						for (OverlayItem item : selectedPositions) {
+							Point p = new Point(0,0);
+							mapView.getProjection().toPixels(item.getPoint(), p);
+							Point p2 = new Point(0,0);							
+							mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0, 0), p2);
+							Rect bounds = marker.getBounds();
+							
+							Log.d("Touch Event - Down", "Point X:" + (p.x - p2.x) + ", Y:" + (p.y - p2.y));
+							Log.d("Touch Event - Down", "Position X:" + x + ", Y:" + y);
+							Log.d("Touch Event - Down", "Marker Bounds: L:" + bounds.left + ", R:" + bounds.right + ", B:" + bounds.bottom + ", T:" + bounds.top); 
+							
+							if (bounds.contains(p2.x + x - p.x, p2.y + y - p.y)) {
+								Log.d("Touch Event - Down", "Item hit !");
+								movedItem = item;
+								movedItemPinned = true;
+								pressTime = System.currentTimeMillis();
+								
+								break;
+							}
+							
+						}
+						result = true;
+					}
+					if (event.getAction() == MotionEvent.ACTION_MOVE) {
+						if (movedItem != null) {
+							Log.d("Touch Event - Move","Press time = " + (System.currentTimeMillis() - pressTime));
+							if (System.currentTimeMillis() - pressTime < 800) {
+								Point p = new Point(0,0);
+								mapView.getProjection().toPixels(movedItem.getPoint(), p);
+								Point p2 = new Point(0,0);
+								mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0,0), p2);
+								
+								if (!marker.getBounds().contains(p2.x + x - p.x , p2.y + y - p.y)) {
+									movedItem = null;
+								}
+							} else {
+								if (movedItemPinned) {
+									Log.d("Touch Event - Move", "Unpinning");
+									selectedPositions.remove(movedItem);
+									mapView.getOverlays().remove(myOverlay);
+									myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+									mapView.getOverlays().add(myOverlay);
+									movedImage.setVisibility(movedImage.VISIBLE);
+									
+									mapView.invalidate();
+									movedItemPinned = false;
+								}
+								
+								RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) movedImage.getLayoutParams();
+								Rect bounds = marker.getBounds();
+								lp.setMargins(x + bounds.left, y + bounds.top, 0, 0);
+								movedImage.setLayoutParams(lp);
+							}
+						}
+						result = true;
+					}
+					if (event.getAction() == MotionEvent.ACTION_UP) {
+						if ((movedItem != null) && (!movedItemPinned)){
+							Log.d("Touch Event - Up","Pinning back");
+							GeoPoint g = (GeoPoint) mapView.getProjection().fromPixels(x, y);
+							OverlayItem oi = new OverlayItem( movedItem.getTitle(), movedItem.getSnippet(), g);
+							oi.setMarker(marker);
+							oi.setMarkerHotspot(HotspotPlace.CENTER);
+							selectedPositions.add(oi);
+							markers.set(markers.indexOf(movedItem), oi);
+							movedImage.setVisibility(movedImage.GONE);
+							mapView.getOverlays().remove(myOverlay);
+							myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+							mapView.getOverlays().add(myOverlay);
+							mapView.invalidate();
+							movedItem = null;
+						}
+						result = true;
+					}
+				}
+				
+				return result;
+			}
+			
+		});
         
         edit.setOnClickListener(new OnClickListener() {
         	
         	public void onClick(View v) {
         		imm.showSoftInput(edit, 0);
-				list.setVisibility(list.VISIBLE);
-				list.setEnabled(true);
-				list.setActivated(true);
-				floorList.setClickable(false);
-				floorList.setActivated(false);
-				floorList.setVisibility(floorList.GONE);
+        		showView(list);
+        		hideView(floorList);
+        		Log.d("Edit", "Click");
         	}
         	
         });
@@ -404,56 +511,24 @@ public class OSMDroidMapActivity extends Activity {
         
     	lastSearch = "";
     	
-    /*	hidePanelButton.setVisibility(hidePanelButton.GONE);
-    	hidePanelButton.setActivated(false);
-    	hidePanelButton.setEnabled(false);
-    	showPanelButton.setVisibility(showPanelButton.GONE);
-    	showPanelButton.setClickable(false);
-    	showPanelButton.setEnabled(false);
-    */	
     	showSearchPanel();
     	
-    	/*
-    	hidePanelButton.setOnClickListener(new OnClickListener() {
-    		
-    		public void onClick(View v) {
-    			hideSearchPanel();
-    		}
-    		
-    	});
-    	
-    	showPanelButton.setOnClickListener(new OnClickListener() {
-    		
-    		public void onClick(View v) {
-    			showSearchPanel();
-    		}
-    	});
-    	*/
     	floorButton.setOnClickListener(new OnClickListener(){
     		
     		public void onClick(View v) {
     			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
-				list.setVisibility(list.GONE);
-				list.setEnabled(false);
-				list.setActivated(false);    			
+				hideView(list);    			
 				if (floorList.isClickable()) {
-    				floorList.setClickable(false);
-    				floorList.setActivated(false);
-    				floorList.setVisibility(floorList.GONE);
+					hideView(floorList);
     			} else {
-    				floorList.setClickable(true);
-    				floorList.setActivated(true);
-    				floorList.setVisibility(floorList.VISIBLE);
+    				showView(floorList);
     			}
     		}
     		
     	});
     	
     	floorList = (ListView) findViewById(R.id.listView2);
-		floorList.setClickable(false);
-		floorList.setActivated(false);
-		floorList.setVisibility(floorList.GONE);
-		
+    	hideView(floorList);
 		floorList.setAlpha((float) 1);
 		floorList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, floorsNumbers));
 		floorList.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
@@ -469,9 +544,7 @@ public class OSMDroidMapActivity extends Activity {
 						floors.get(arg2).get(0).getLongitudeE6() + Middle.getLongitudeE6() - floors.get(currentFloor).get(0).getLongitudeE6()));
 				mapView.invalidate();
 				currentFloor = arg2;
-				floorList.setClickable(false);
-				floorList.setActivated(false);
-				floorList.setVisibility(floorList.GONE);
+				hideView(floorList);
 			}
     		
     	});
@@ -481,17 +554,6 @@ public class OSMDroidMapActivity extends Activity {
         
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, selection);
         list.setAdapter(arrayAdapter);
-        
-        // User wanted to search -> display search tools
-        /*
-        
-        if (extras.containsKey("search")) {
-        	showSearchPanel();
-        } else {
-        	hideSearchPanel();
-        }
-        
-        */
         
         // This section makes the application load maps from assets folder
         final AssetsTileSource ASSETS_TILE_SOURCE = new AssetsTileSource(this.getAssets(), "Map",  ResourceProxy.string.offline_mode, 14, 18, 256, ".png"); // This will load from assets/Map/14/xxxx/yyyyy.png
@@ -516,16 +578,33 @@ public class OSMDroidMapActivity extends Activity {
         	}
         	OverlayItem oitem = new OverlayItem(tmp, teacherNames.get(i).get(teacherNames.get(i).size()-1),  teacherPositions.get(i));
         	oitem.setMarkerHotspot(HotspotPlace.CENTER);
-        	oitem.setMarker(this.getResources().getDrawable(R.drawable.blue_dot5));
+        	oitem.setMarker(marker);
         	markers.add(oitem);
         }
         
         gestureListener = new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
 
 			public boolean onItemLongPress(int arg0, OverlayItem arg1) {
+				if (editMode) {
+					/*int tmpindex = markers.indexOf(arg1);
+					alive.set(tmpindex, 0);
+					mapView.getOverlays().remove(myOverlay);
+					selectedPositions.remove(arg1);
+					myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+					mapView.getOverlays().add(myOverlay);
+					selection.clear();
+					for (int i = 0; i < indexes.size(); i++) {
+						if (alive.get(indexes.get(i)) == 1) {
+							selection.add(teacherNamesPlain.get(indexes.get(i)));
+						}
+					}
+					list.refreshDrawableState();
+					mapView.invalidate();*/
+				} else {
 				Toast.makeText(
                         OSMDroidMapActivity.this,
                         arg1.mDescription, Toast.LENGTH_SHORT).show();
+				}
 				return false;
 			}
 
@@ -619,7 +698,7 @@ public class OSMDroidMapActivity extends Activity {
 	
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent ev) {		
-		
+			
 		if (BorderLeftTop == null) {
 	        BorderLeftTop = (GeoPoint) mapView.getProjection().fromPixels(0, 0);
 	        BorderRightBottom = (GeoPoint) mapView.getProjection().fromPixels(mapView.getWidth(), mapView.getHeight());

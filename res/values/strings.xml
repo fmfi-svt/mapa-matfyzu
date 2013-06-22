@@ -16,6 +16,7 @@
 
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <color name="gray">#BBBBBB</color>
 
     <string name="title_activity_sample">Sample</string>
 
@@ -24,5 +25,11 @@
     <string name="show_search_sk">Vyhľadať</string>
 
     <string name="button_floor_sk">Poschodie</string>
+
+    <string name="popup_name">Meno:</string>
+
+    <string name="popup_room">Miestnost:</string>
+
+    <string name="popup_button">OK</string>
 
 </resources>
