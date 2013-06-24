@@ -51,6 +51,18 @@ public class SearchTree {
 		current.addIndex(index);
 	}
 	
+	public void removeRecord(String record, int index) {
+		int pos = 0;
+		record = normalize(record);
+		Node current = root;
+		
+		while (pos < record.length()) {
+			current = current.getChild(record.charAt(pos) - 'a');
+			pos++;
+		}
+		current.removeIndex(index);
+	}
+	
 	public ArrayList<Integer> searchName(String name, int mistakes) {
 		
 		name = normalize(name);
@@ -205,6 +217,9 @@ public class SearchTree {
 			indexes.add(index);
 		}
 		
+		public void removeIndex(int index) {
+			indexes.remove(new Integer(index));
+		}
 		/*
 		 * Returns indexes on this node
 		 */

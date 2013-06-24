@@ -33,16 +33,21 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
 
 import android.app.Activity;
+import android.app.DialogFragment;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.*;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -58,13 +63,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class OSMDroidMapActivity extends Activity {
+public class OSMDroidMapActivity extends Activity implements NoticeDialogFragment.NoticeDialogListener {
 
+	FragmentManager fragmentManager;
 	BoundedMapView mapView;
 	MapController mapController;
 	GeoPoint BorderLeftTop = new GeoPoint(48.153060, 17.066788);
@@ -82,6 +89,7 @@ public class OSMDroidMapActivity extends Activity {
 	OverlayItem movedItem = null;
 	boolean movedItemPinned = true;
 	ImageView movedImage;
+	OverlayItem editedItem = null;
 	long pressTime = 0;
 	SearchTree tree;
 	ListView list;
@@ -97,6 +105,7 @@ public class OSMDroidMapActivity extends Activity {
 	final ArrayList<Integer> indexes = new ArrayList<Integer>();
 	InputMethodManager imm;
 	boolean editMode;
+	PopupWindow popup;
 	
 	/*
 	 * Parses the words divided by whitespaces in string into array of these words
@@ -308,6 +317,46 @@ public class OSMDroidMapActivity extends Activity {
 		v.setEnabled(false);
 	}
 
+	public void onDialogPositiveClick(NoticeDialogFragment dialog) {
+		// TODO Auto-generated method stub
+		EditText name = (EditText) dialog.getDialog().findViewById(R.id.edit_name);
+		EditText room = (EditText) dialog.getDialog().findViewById(R.id.edit_room);
+		Log.d("Positive Click", "Name: "+ name.getText().toString() + ", Room: " + room.getText().toString());
+		int index = markers.indexOf(editedItem);
+		int index2 = selectedPositions.indexOf(editedItem);
+		String newName = name.getText().toString();
+		String newRoom = room.getText().toString();		
+		OverlayItem tmp = new OverlayItem(newName, newRoom, editedItem.getPoint());
+		tmp.setMarker(marker);
+		tmp.setMarkerHotspot(HotspotPlace.CENTER);
+		markers.set(index, tmp);
+		for (int i = 0; i < teacherNames.get(index).size()-1; i++) {
+			tree.removeRecord(teacherNames.get(index).get(i), index);
+		}
+		ArrayList<String> newNameList = parseString(newName + " " + newRoom);
+		for (int i = 0; i < newNameList.size()-1; i++) {
+			tree.addRecord(newNameList.get(i), index);
+		}
+		teacherNames.set(index, newNameList);
+		teacherNamesPlain.set(index, newName + " (" + newRoom + ")");
+		//selection.set(index2, newName + " (" + newRoom + ")");
+		Log.d("Positive Click","Index2 = " + index2);
+		list.invalidate();
+		selectedPositions.set(index2, tmp);
+		mapView.getOverlays().remove(myOverlay);
+		myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+		mapView.getOverlays().add(myOverlay);
+		editedItem = null;		
+	}
+
+	public void onDialogNegativeClick(NoticeDialogFragment dialog) {
+		// TODO Auto-generated method stub
+		EditText name = (EditText) dialog.getDialog().findViewById(R.id.edit_name);
+		EditText room = (EditText) dialog.getDialog().findViewById(R.id.edit_room);
+		Log.d("Negative Click", "Name: "+ name.getText().toString() + ", Room: " + room.getText().toString());
+		editedItem = null;
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -407,6 +456,8 @@ public class OSMDroidMapActivity extends Activity {
 				
 				Log.d("Touch Event", "Any");
 				
+				long pressTimeTreshold = 700;
+				
 				int x = (int)event.getX();
 				int y = (int)event.getY();
 				
@@ -441,7 +492,7 @@ public class OSMDroidMapActivity extends Activity {
 					if (event.getAction() == MotionEvent.ACTION_MOVE) {
 						if (movedItem != null) {
 							Log.d("Touch Event - Move","Press time = " + (System.currentTimeMillis() - pressTime));
-							if (System.currentTimeMillis() - pressTime < 800) {
+							if (System.currentTimeMillis() - pressTime < pressTimeTreshold) {
 								Point p = new Point(0,0);
 								mapView.getProjection().toPixels(movedItem.getPoint(), p);
 								Point p2 = new Point(0,0);
@@ -472,6 +523,22 @@ public class OSMDroidMapActivity extends Activity {
 						result = true;
 					}
 					if (event.getAction() == MotionEvent.ACTION_UP) {
+						if ((movedItem != null) && (System.currentTimeMillis() - pressTime < pressTimeTreshold)) {
+							Log.d("Touch Event - Up", "Showing Dialog");
+							editedItem = movedItem;
+							NoticeDialogFragment d = new NoticeDialogFragment();
+							d.show(getFragmentManager(), "MarkerEdit");
+							getFragmentManager().executePendingTransactions();
+							if (d.getDialog() == null) {
+								Log.d("Tap","Dialog == null");
+							} else {
+								EditText n = (EditText) d.getDialog().findViewById(R.id.edit_name);
+								EditText r = (EditText) d.getDialog().findViewById(R.id.edit_room);
+								n.setText(editedItem.getTitle());
+								r.setText(editedItem.getSnippet());
+							}
+							movedItem = null;
+						}
 						if ((movedItem != null) && (!movedItemPinned)){
 							Log.d("Touch Event - Up","Pinning back");
 							GeoPoint g = (GeoPoint) mapView.getProjection().fromPixels(x, y);
@@ -479,7 +546,9 @@ public class OSMDroidMapActivity extends Activity {
 							oi.setMarker(marker);
 							oi.setMarkerHotspot(HotspotPlace.CENTER);
 							selectedPositions.add(oi);
-							markers.set(markers.indexOf(movedItem), oi);
+							int index = markers.indexOf(movedItem);
+							markers.set(index, oi);
+							teacherPositions.set(index, g);
 							movedImage.setVisibility(movedImage.GONE);
 							mapView.getOverlays().remove(myOverlay);
 							myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
@@ -581,7 +650,19 @@ public class OSMDroidMapActivity extends Activity {
         	oitem.setMarker(marker);
         	markers.add(oitem);
         }
+      /*  
+        popup = new PopupWindow(this);
+        RelativeLayout rl = new RelativeLayout(this);
+        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        TextView tv = new TextView(this);
+        tv.setText("Sample text on PopupView ... ");
+        rl.addView(tv, lp);
+        RelativeLayout.LayoutParams lp2 = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         
+        Button b = new Button(this);
+        rl.addView(b,lp2);
+        popup.setContentView(rl);
+        */
         gestureListener = new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
 
 			public boolean onItemLongPress(int arg0, OverlayItem arg1) {
@@ -609,14 +690,17 @@ public class OSMDroidMapActivity extends Activity {
 			}
 
 			public boolean onItemSingleTapUp(int arg0, OverlayItem arg1) {
-				Toast.makeText(
-                        OSMDroidMapActivity.this, 
-                        arg1.mTitle ,Toast.LENGTH_SHORT).show();
+				if (editMode) {
+					
+				} else {
+					Toast.makeText(
+	                        OSMDroidMapActivity.this, 
+	                        arg1.mTitle ,Toast.LENGTH_SHORT).show();
+				}
 				return false;
 			}
 
         };
-         
     	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
     	mapView.invalidate();
     	/*

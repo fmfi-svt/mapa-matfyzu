@@ -13,23 +13,19 @@
     <string name="title_activity_osmdroid_map">OSMDroidMapActivity</string>
     <string name="osm_map_preview_sk">OSMDroid Mapa</string>
     <string name="button_osm_map_sk">Pohyb po mape</string>
-
+    <string name="title_activity_sample">Sample</string>
+    <string name="hide_search_sk">Skryť</string>
+    <string name="show_search_sk">Vyhľadať</string>
+    <string name="button_floor_sk">Poschodie</string>
+    <string name="dialog_name">Meno:</string>
+    <string name="dialog_room">Miestnost:</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_edit_marker">Upraviť marker</string>
+    
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="gray">#BBBBBB</color>
 
-    <string name="title_activity_sample">Sample</string>
-
-    <string name="hide_search_sk">Skryť</string>
-
-    <string name="show_search_sk">Vyhľadať</string>
-
-    <string name="button_floor_sk">Poschodie</string>
-
-    <string name="popup_name">Meno:</string>
-
-    <string name="popup_room">Miestnost:</string>
-
-    <string name="popup_button">OK</string>
 
 </resources>
