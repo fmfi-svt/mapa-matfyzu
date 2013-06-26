@@ -17,28 +17,18 @@
         android:id="@+id/button_edit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/button_teacher"
         android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
         android:layout_marginTop="22dp"
         android:onClick="onClick"
         android:text="@string/search_room_sk" />
 
     <Button
-        android:id="@+id/button_teacher"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:onClick="onClick"
-        android:text="@string/search_teacher_sk" />
-
-    <Button
         android:id="@+id/button_osm_map"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/button_teacher"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="26dp"
+        android:layout_above="@+id/button_edit"
+        android:layout_alignLeft="@+id/textView1"
         android:onClick="onClick"
         android:text="@string/button_osm_map_sk" />
 

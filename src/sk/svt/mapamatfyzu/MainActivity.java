@@ -64,9 +64,12 @@ public class MainActivity extends Activity {
 		teacherPositions = new ArrayList<ArrayList<Double>>();
         
 		try {
+			// Build the teacher names and positions from resource file
 			Scanner in = new Scanner(this.getAssets().open(filename));
 			String line = "";
 			int count = 0;
+			
+			// Skip comments
 			while (in.hasNextLine() && (!line.equals("#begin"))) {
 				if (line == null) {
 					throw new InputMismatchException("No beginning found in the resource file " + filename + " !");
@@ -76,6 +79,8 @@ public class MainActivity extends Activity {
 			if (in.hasNextLine()) {
 				line = in.nextLine();
 			}
+			
+			// Parse the input in the file into ArrayLists
 			while (in.hasNextLine() && (!line.equals("#end"))) {
 				ArrayList<Object> tmp = new ArrayList<Object>();
 				tmp = parseInput(line);
@@ -93,6 +98,8 @@ public class MainActivity extends Activity {
 				count++;
 				line = in.nextLine();
 			}
+			
+			// There is no #end marker found in the file, it is probably broken
 			if (!line.equals("#end")) {
 				throw new InputMismatchException("No end found in the resource file " + filename + " !");
 			}
@@ -116,6 +123,7 @@ public class MainActivity extends Activity {
     }
     
     public void onClick(View view) {
+    	// If user cicks on a button, we need to send names and positions to the map activity
     	if (view.getId() == R.id.button_osm_map) {
     		Intent intent = new Intent(this, OSMDroidMapActivity.class);
     		for (int i = 0; i < teacherNames.size(); i++) {
@@ -124,18 +132,10 @@ public class MainActivity extends Activity {
 	    	}
     		startActivity(intent);
     	}
-    	if (view.getId() == R.id.button_teacher) {
-    		Intent intent = new Intent(this, OSMDroidMapActivity.class);
-    		intent.putExtra("search", 1);
-    		for (int i = 0; i < teacherNames.size(); i++) {
-	    		intent.putExtra("teacherNames", teacherNames);
-	    		intent.putExtra("teacherPositions", teacherPositions);
-	    	}
-    		startActivity(intent);
-    		
-    	}
+    	
     	if (view.getId() == R.id.button_edit) {
     		Intent intent = new Intent(this, OSMDroidMapActivity.class);
+    		// Send extra data, indicating that the user wants to edit data
     		intent.putExtra("edit", 1);
     		for (int i = 0; i < teacherNames.size(); i++) {
     			intent.putExtra("teacherNames", teacherNames);

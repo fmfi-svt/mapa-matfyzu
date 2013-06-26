@@ -20,7 +20,7 @@
     <string name="dialog_name">Meno:</string>
     <string name="dialog_room">Miestnost:</string>
     <string name="dialog_ok">OK</string>
-    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_cancel">Zrušiť</string>
     <string name="dialog_edit_marker">Upraviť marker</string>
     
     <color name="white">#FFFFFF</color>

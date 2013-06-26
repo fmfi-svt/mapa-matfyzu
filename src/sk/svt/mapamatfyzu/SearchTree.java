@@ -13,14 +13,24 @@ public class SearchTree {
 		root = new Node(-1, new ArrayList<Integer>());
 	}
 	
-	// Remove diacritics
+	/**
+	 * Removes accents
+	 * 
+	 * @param text a string to be edited
+	 * @return a string with removed accents
+	 */
 	@SuppressLint("NewApi")
 	public static String removeAccents(String text) {
 	    return text == null ? null
 	        : Normalizer.normalize(text, Form.NFD)
 	            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
 	}
-	
+	/** 
+	 * Removes accents, special characters, and lowercases the string
+	 * 
+	 * @param s a string to normalize
+	 * @return a string consisting only from lowercase characters 'a' - 'z'
+	 */
 	private String normalize(String s) {
 		int pos = s.length()-1;
 		StringBuilder sb = new StringBuilder();
@@ -36,13 +46,16 @@ public class SearchTree {
 		return sb.toString();
 	}
 	
-	/*
-	 * Adds a search record into a tree (appends index of the record onto the right node)
+	/**
+	 * Adds a search record into the tree (appends index of the record onto the right node)
+	 * 
+	 * @param record a string to be added
+	 * @param index index under which it should be memorized
 	 */
 	public void addRecord(String record, int index) {
 		int pos = 0;
 		record = normalize(record);
-		Node current = root;		
+		Node current = root;
 		
 		while (pos < record.length()) {
 			current = current.getChild(record.charAt(pos) - 'a');
@@ -51,6 +64,12 @@ public class SearchTree {
 		current.addIndex(index);
 	}
 	
+	/**
+	 * Deletes a record with given index from the tree
+	 * 
+	 * @param record a string to be removed from the tree
+	 * @param index an index under which the record was memorized
+	 */
 	public void removeRecord(String record, int index) {
 		int pos = 0;
 		record = normalize(record);
@@ -63,6 +82,13 @@ public class SearchTree {
 		current.removeIndex(index);
 	}
 	
+	/**
+	 * Searches for a name (record) in the tree with given maximum mistakes made
+	 * 
+	 * @param name a string to be searched for
+	 * @param mistakes a number of maximum mistakes made
+	 * @return a list of matching indexes
+	 */
 	public ArrayList<Integer> searchName(String name, int mistakes) {
 		
 		name = normalize(name);
@@ -70,6 +96,12 @@ public class SearchTree {
 		return search(name, mistakes, this.root);
 	}
 
+	/**
+	 * Searches the subtree from given Node and returns all indexes in this subtree
+	 * 
+	 * @param sub root node of this subtree
+	 * @return list of indexes in whole subtree
+	 */
 	private ArrayList<Integer> getIndexesFromSubtree(Node sub) {
 		ArrayList<Integer> res = new ArrayList<Integer>();
 		res.addAll(sub.getIndexes());
@@ -81,11 +113,15 @@ public class SearchTree {
 		return res;
 	}
 	
-	/*
-	 * Suggestive search, returns list of indexes matching the string
-	 * 
+	/**
+	 * Suggestive search, returns list of indexes of strings 
+	 * that match the given string.
+	 * <p>
 	 * Algorithm gets to the node representing the end of the string
 	 * and returns all indexes in each node from its subtree
+	 * 
+	 * @param name a record (name) to be searched for
+	 * @return ArrayList of indexes (multiple occurrences possible)
 	 */
 	public ArrayList<Integer> suggestiveSearch(String name) {
 		
@@ -107,30 +143,6 @@ public class SearchTree {
 		return getIndexesFromSubtree(currentNode);
 		
 	}
-	private ArrayList<Integer> sugSearch(String name, Node actual) {
-		
-		if (name.length() > 0) {
-			StringBuilder sb = new StringBuilder();
-			sb.append(name);
-			sb.deleteCharAt(0);
-			int first = name.charAt(0) - 'a';
-			if (actual.hasChild(first)) {
-				return sugSearch(sb.toString(), actual.getChild(first));
-			} else {
-				return new ArrayList<Integer>();
-			}
-		} else {
-			ArrayList<Integer> ret = actual.getIndexes();
-			for (int i = 0; i < 26; i++) {
-				if (actual.hasChild(i)) {
-					ret.addAll(sugSearch(name, actual.getChild(i)));
-				}
-			}
-			return ret;
-		}
-		
-	}
-	
 	private ArrayList<Integer> search(String name, int mistakes, Node actual) {
 		
 		ArrayList<Integer> ret = new ArrayList<Integer>();
