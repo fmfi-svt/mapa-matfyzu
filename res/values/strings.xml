@@ -20,12 +20,13 @@
     <string name="dialog_name">Meno:</string>
     <string name="dialog_room">Miestnost:</string>
     <string name="dialog_ok">OK</string>
-    <string name="dialog_cancel">Zrušiť</string>
+    <string name="dialog_delete">Vymazať</string>
     <string name="dialog_edit_marker">Upraviť marker</string>
     
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="gray">#BBBBBB</color>
+    <string name="text_initializing">Initializing...</string>
 
 
 </resources>

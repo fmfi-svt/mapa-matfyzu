@@ -62,6 +62,7 @@ public class MainActivity extends Activity {
         
 		teacherNames = new ArrayList<ArrayList<String>>();
 		teacherPositions = new ArrayList<ArrayList<Double>>();
+        setContentView(R.layout.activity_main);
         
 		try {
 			// Build the teacher names and positions from resource file
@@ -112,8 +113,13 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 			return;
 		}
-        
-        setContentView(R.layout.activity_main);
+		
+		Intent intent = new Intent(this, OSMDroidMapActivity.class);
+		for (int i = 0; i < teacherNames.size(); i++) {
+    		intent.putExtra("teacherNames", teacherNames);
+    		intent.putExtra("teacherPositions", teacherPositions);
+    	}
+		startActivity(intent);
     }
 
     @Override
@@ -124,7 +130,7 @@ public class MainActivity extends Activity {
     
     public void onClick(View view) {
     	// If user cicks on a button, we need to send names and positions to the map activity
-    	if (view.getId() == R.id.button_osm_map) {
+    /*	if (view.getId() == R.id.button_osm_map) {
     		Intent intent = new Intent(this, OSMDroidMapActivity.class);
     		for (int i = 0; i < teacherNames.size(); i++) {
 	    		intent.putExtra("teacherNames", teacherNames);
@@ -143,5 +149,6 @@ public class MainActivity extends Activity {
     		}
     		startActivity(intent);
     	}
+    	*/
     }
 }

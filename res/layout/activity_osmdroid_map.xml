@@ -75,4 +75,20 @@
         android:layout_alignTop="@+id/osmmapview"
         android:src="@drawable/blue_dot5" />
 
+    <ImageView
+        android:id="@+id/edit_data_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/edit_button" />
+
+    <ImageView
+        android:id="@+id/save_data_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/save_button" />
+
 </RelativeLayout>

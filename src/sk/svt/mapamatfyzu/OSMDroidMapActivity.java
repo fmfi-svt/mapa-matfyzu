@@ -63,6 +63,7 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -109,8 +110,13 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	boolean editMode; // Indicates, if user wanted to edit data
 	boolean newItem;
 	int maxListSize = 3;
+	ImageView editButton; // Button for switching to edit mode
+	ImageView saveButton; // Button for saving edited data
 	Timer timer;
+	String filename; // Name of the file, where all the data is stored (can be relative path)
 	int x,y; // last position of pointer
+	ArrayList<OverlayItem> newItems = new ArrayList<OverlayItem>(); // Recently added items (before changing the search bar)
+	
 	private Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -257,13 +263,16 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 
     		// Searched string has changed -> update the list
 			public void afterTextChanged(Editable s) {
+				newItems.clear();
 				selection.clear(); // Clear results written on the list
 				indexes.clear(); // Clear corresponding indexes to general array of names
 				selectedPositions.clear();
 				if (s.toString().isEmpty()) {
 					// Search bar is empty, add all the indexes !
 					for (int i = 0; i < markers.size(); i++) {
-						selectedPositions.add(markers.get(i));
+						if (alive.get(i) == 1) {
+							selectedPositions.add(markers.get(i));
+						}
 					}
 					hideView(list);
 				} else {
@@ -424,12 +433,14 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			alive.add(1);
 			// The item shall be displayed no matter what until the search bar changes
 			selectedPositions.add(tmp);
+			newItems.add(tmp);
 			newItem = false;
 		} else {
 			// Item was edited, it's not new
 			// Find, where the marker is in general array and selection array
 			int index = markers.indexOf(editedItem);
 			int index2 = selectedPositions.indexOf(editedItem);	
+			int indexNew = newItems.indexOf(editedItem);
 			// Create new OverlayItem with desired preferences
 			markers.set(index, tmp);
 			// Update the search tree
@@ -442,7 +453,15 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			// Update all arrays regarding names/rooms
 			teacherNames.set(index, newNameList);
 			teacherNamesPlain.set(index, newName + " (" + newRoom + ")");
-			selection.set(index2, newName + " (" + newRoom + ")");
+			if (!edit.getText().toString().isEmpty()) {
+				if (indexNew == -1) {
+					// It's not a new item, it's been searched for
+					selection.set(index2, newName + " (" + newRoom + ")");
+				} else {
+					// Update the new item
+					newItems.set(indexNew, tmp);
+				}
+			}
 			Log.d("Positive Click","Index2 = " + index2);
 			selectionArrayAdapter.notifyDataSetChanged();
 			list.invalidate();
@@ -462,10 +481,36 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	 */
 	public void onDialogNegativeClick(NoticeDialogFragment dialog) {
 		// TODO Auto-generated method stub
+		
+		if (!newItem) {
+			int index = markers.indexOf(editedItem); // Global index of that item
+			alive.set(index, 0);
+			int index2 = selectedPositions.indexOf(editedItem); // Index into selection in search list
+			int indexNew = newItems.indexOf(editedItem);
+			selectedPositions.remove(editedItem);
+			if (!edit.getText().toString().isEmpty()) {
+				if (indexNew == -1) {
+					// It's not a new item, it's a result of the search
+					selection.remove(index2);
+				} else {
+					newItems.remove(indexNew);
+				}
+			}
+			mapView.getOverlays().remove(myOverlay);
+			myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+			mapView.getOverlays().add(myOverlay);
+			mapView.invalidate();
+			editedItem = null;
+		}
+		
 		EditText name = (EditText) dialog.getDialog().findViewById(R.id.edit_name);
 		EditText room = (EditText) dialog.getDialog().findViewById(R.id.edit_room);
 		Log.d("Negative Click", "Name: "+ name.getText().toString() + ", Room: " + room.getText().toString());
 		editedItem = null;
+	}
+	
+	private void saveDataToFile(String file) {
+		
 	}
 	
 	@Override
@@ -474,6 +519,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		Intent intent = this.getIntent();
 		Bundle extras = intent.getExtras();
 		super.onCreate(savedInstanceState);
+		
+		filename = "names.txt"; // Name of the file, where all the data is stored
 		
 		// Set borders of the floors
 		ArrayList<GeoPoint> tmpgp = new ArrayList<GeoPoint>();
@@ -530,22 +577,43 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 		movedImage = (ImageView) findViewById(R.id.imageView1);
 		movedImage.setVisibility(movedImage.GONE);
+		editButton = (ImageView) findViewById(R.id.edit_data_button);
+		saveButton = (ImageView) findViewById(R.id.save_data_button);
 		
-		// Find out, if the user wanted to edit or just explore
+		// We start from explore mode
         editMode = false;
-        
-        if (extras.containsKey("edit")) {
-        // User wants to edit data
-        	editMode = true;
-        }
-    	
+        showView(editButton);
+		hideView(saveButton);
+		
         this.mapView = (BoundedMapView) findViewById(R.id.osmmapview);
         this.mapController = mapView.getController();
         
     //    mapView.setBuiltInZoomControls(true);  // Touch events don't work when zoom controls are enabled
         mapView.setMultiTouchControls(true); 
         
-        mapView.getController().setZoom(16);
+        mapView.getController().setZoom(17);
+        
+        editButton.setOnClickListener(new OnClickListener() {
+
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				editMode = true;
+				hideView(editButton);
+				showView(saveButton);
+			}
+        	
+        });
+        
+        saveButton.setOnClickListener(new OnClickListener() {
+        	
+        	public void onClick(View v) {
+        		// TODO Auto-generated method stub
+        		editMode = false;
+        		hideView(saveButton);
+        		showView(editButton);
+        		saveDataToFile(filename);
+        	}
+        });
 
         mapView.setOnTouchListener(new OnTouchListener() {
 			
@@ -806,36 +874,32 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         	oitem.setMarker(marker);
         	markers.add(oitem);
         }
+        
+        gestureListener = new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
 
+			public boolean onItemLongPress(int arg0, OverlayItem arg1) {
+				return false;
+			}
+
+			public boolean onItemSingleTapUp(int arg0, OverlayItem arg1) {
+				if (!editMode) {
+					// Show name + room if the edit mode is not activated
+					Toast.makeText(
+	                        OSMDroidMapActivity.this, 
+	                        arg1.mTitle + " (" + arg1.mDescription + ")",Toast.LENGTH_SHORT).show();
+				}
+				return false;
+			}
+
+        };
+        
 		for (int i = 0; i < markers.size(); i++) {
 			selectedPositions.add(markers.get(i));
 		}
 		myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
 		mapView.getOverlays().add(myOverlay);
 		hideView(list);
-        gestureListener = new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
 
-			public boolean onItemLongPress(int arg0, OverlayItem arg1) {
-				if (!editMode) {
-					// Show room if the edit mode is not activated
-					Toast.makeText(
-                        OSMDroidMapActivity.this,
-                        arg1.mDescription, Toast.LENGTH_SHORT).show();
-				}
-				return false;
-			}
-
-			public boolean onItemSingleTapUp(int arg0, OverlayItem arg1) {
-				if (!editMode) {
-					// Show name if the edit mode is not activated
-					Toast.makeText(
-	                        OSMDroidMapActivity.this, 
-	                        arg1.mTitle ,Toast.LENGTH_SHORT).show();
-				}
-				return false;
-			}
-
-        };
         
         // Set the borders of this view
     	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
