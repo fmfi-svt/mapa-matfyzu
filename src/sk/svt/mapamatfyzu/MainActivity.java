@@ -1,14 +1,23 @@
 package sk.svt.mapamatfyzu;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
 import android.os.Bundle;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.Window;
@@ -19,6 +28,9 @@ public class MainActivity extends Activity {
 	
 	ArrayList<ArrayList<String>> teacherNames;
 	ArrayList<ArrayList<Double>> teacherPositions;
+	private boolean createNewFile;
+	Scanner in;
+	PrintStream out;
 
 	private ArrayList<Object> parseInput(String s) {
 		ArrayList<Object> res = new ArrayList<Object>();
@@ -63,10 +75,24 @@ public class MainActivity extends Activity {
 		teacherNames = new ArrayList<ArrayList<String>>();
 		teacherPositions = new ArrayList<ArrayList<Double>>();
         setContentView(R.layout.activity_main);
+        createNewFile = false;
         
+        try {
+			FileInputStream fis = openFileInput(filename);
+			in = new Scanner(fis);
+			Log.d("File load","File: "+filename+" found");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			Log.d("File load","Resource file not found - creating new");
+			createNewFile = true;
+		}
 		try {
 			// Build the teacher names and positions from resource file
-			Scanner in = new Scanner(this.getAssets().open(filename));
+			if (createNewFile) {
+				in = new Scanner(this.getAssets().open(filename));
+				FileOutputStream fos = openFileOutput(filename, Context.MODE_PRIVATE);
+				out = new PrintStream(fos);
+			}
 			String line = "";
 			int count = 0;
 			
@@ -76,9 +102,11 @@ public class MainActivity extends Activity {
 					throw new InputMismatchException("No beginning found in the resource file " + filename + " !");
 				}
 				line = in.nextLine();
+				if (createNewFile) out.println(line);
 			}
 			if (in.hasNextLine()) {
 				line = in.nextLine();
+				if (createNewFile) out.println(line);
 			}
 			
 			// Parse the input in the file into ArrayLists
@@ -98,12 +126,20 @@ public class MainActivity extends Activity {
 				teacherPositions.add(tmppositions);
 				count++;
 				line = in.nextLine();
+				if (createNewFile) out.println(line);
 			}
 			
 			// There is no #end marker found in the file, it is probably broken
 			if (!line.equals("#end")) {
 				throw new InputMismatchException("No end found in the resource file " + filename + " !");
 			}
+			if (createNewFile) {
+				while (in.hasNextLine()) {
+					out.println(line);
+				}
+			}
+			in.close();
+			if (createNewFile) out.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -114,8 +150,11 @@ public class MainActivity extends Activity {
 			return;
 		}
 		
+	//	filename = getFilesDir().getPath().toString()+"/names.txt";
+		
 		Intent intent = new Intent(this, OSMDroidMapActivity.class);
 		for (int i = 0; i < teacherNames.size(); i++) {
+			intent.putExtra("filename", filename);
     		intent.putExtra("teacherNames", teacherNames);
     		intent.putExtra("teacherPositions", teacherPositions);
     	}
