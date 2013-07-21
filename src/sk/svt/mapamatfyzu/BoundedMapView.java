@@ -172,12 +172,12 @@ public class BoundedMapView extends MapView {
     
     @Override
     public int getMaxZoomLevel() {
-    	return 18;
+    	return 20;
     }
     
     @Override
     public int getMinZoomLevel() {
-    	return 15;
+    	return 17;
     }
 
 }

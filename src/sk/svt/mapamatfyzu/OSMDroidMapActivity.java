@@ -78,8 +78,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	FragmentManager fragmentManager;
 	BoundedMapView mapView;
 	MapController mapController;
-	GeoPoint BorderLeftTop = new GeoPoint(48.153060, 17.066788);
-	GeoPoint BorderRightBottom = new GeoPoint(48.149180, 17.072130);
+	GeoPoint BorderLeftTop = new GeoPoint(48.15307777, 17.067402777);
+	GeoPoint BorderRightBottom = new GeoPoint(48.14863055, 17.07549444);
 	ArrayList<ArrayList< GeoPoint > > floors; // List of upper left and lower right corners for floors
 	ArrayList<String> floorsNumbers; // How the floors are visually represented
 	ArrayList<OverlayItem> markers; // All markers in the map
@@ -623,10 +623,10 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         this.mapView = (BoundedMapView) findViewById(R.id.osmmapview);
         this.mapController = mapView.getController();
         
-    //    mapView.setBuiltInZoomControls(true);  // Touch events don't work when zoom controls are enabled
+      //  mapView.setBuiltInZoomControls(true);  // Touch events don't work when zoom controls are enabled
         mapView.setMultiTouchControls(true); 
         
-        mapView.getController().setZoom(17);
+        mapView.getController().setZoom(15);
         
         editButton.setOnClickListener(new OnClickListener() {
 
@@ -894,14 +894,14 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         list.setAdapter(selectionArrayAdapter);
         
         // This section makes the application load maps from assets folder
-        final AssetsTileSource ASSETS_TILE_SOURCE = new AssetsTileSource(this.getAssets(), "Map",  ResourceProxy.string.offline_mode, 14, 18, 256, ".png"); // This will load from assets/Map/14/xxxx/yyyyy.png
+        final AssetsTileSource ASSETS_TILE_SOURCE = new AssetsTileSource(this.getAssets(), "Map",  ResourceProxy.string.offline_mode, mapView.getMinZoomLevel(), mapView.getMaxZoomLevel(), 256, ".jpg"); // This will load from assets/Map/14/xxxx/yyyyy.png
 
         MapTileModuleProviderBase moduleProvider = new MapTileFileAssetsProvider(ASSETS_TILE_SOURCE);
         SimpleRegisterReceiver simpleReceiver = new SimpleRegisterReceiver(this);
         MapTileProviderArray tileProviderArray = new MapTileProviderArray(ASSETS_TILE_SOURCE, simpleReceiver, new MapTileModuleProviderBase[] { moduleProvider });
 
         TilesOverlay tilesOverlay = new TilesOverlay(tileProviderArray, getApplicationContext());
-		tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+		tilesOverlay.setLoadingBackgroundColor(Color.GRAY);
         mapView.getOverlays().add(tilesOverlay);
         
         // Simple overlay
@@ -947,6 +947,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		hideView(list);
 
         
+		mapView.setUseDataConnection(false);
+		
         // Set the borders of this view
     	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
     	mapView.invalidate();
