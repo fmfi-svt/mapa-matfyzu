@@ -3,23 +3,56 @@
     android:id="@+id/RelativeLayout2"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white" 
-    android:focusableInTouchMode="true">
+    android:background="@color/white"
+    android:focusableInTouchMode="true" >
 
     <EditText
         android:id="@+id/edit_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:hint="@string/dialog_name"
-        android:ems="10" />
+        android:ems="10"
+        android:hint="@string/dialog_name" />
 
     <EditText
         android:id="@+id/edit_room"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/edit_name"
-        android:hint="@string/dialog_room"
-        android:ems="10" />
+        android:ems="10"
+        android:hint="@string/dialog_room" />
+    
+    <TextView
+        android:id="@+id/dialogFloorText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/edit_room"
+        android:textSize="20sp"
+        android:text="@string/dialog_floor" />
+		
+		    <RadioButton
+		        android:id="@+id/radioFloorButton1"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_alignTop="@+id/radioFloorButton0"
+		        android:layout_toRightOf="@+id/radioFloorButton0"
+		        android:text="@string/radioFloor1" />
+		    
+		    <RadioButton
+		        android:id="@+id/radioFloorButton2"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_alignTop="@+id/radioFloorButton1"
+		        android:layout_toRightOf="@+id/radioFloorButton1"
+		        android:text="@string/radioFloor2" />
+
+		    <RadioButton
+		        android:id="@+id/radioFloorButton0"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_toRightOf="@+id/dialogFloorText"
+		        android:layout_alignTop="@+id/dialogFloorText"
+		        android:text="@string/radioFloor0" />
     
 </RelativeLayout>

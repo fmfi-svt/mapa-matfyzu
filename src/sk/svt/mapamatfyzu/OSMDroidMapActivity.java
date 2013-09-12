@@ -17,6 +17,7 @@ import android.os.Message;
 
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
+import org.osmdroid.events.MapAdapter;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
@@ -64,10 +65,14 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
 import android.widget.TextView;
@@ -78,8 +83,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	FragmentManager fragmentManager;
 	BoundedMapView mapView;
 	MapController mapController;
-	GeoPoint BorderLeftTop = new GeoPoint(48.15307777, 17.067402777);
-	GeoPoint BorderRightBottom = new GeoPoint(48.14863055, 17.07549444);
+	GeoPoint BorderLeftTop = new GeoPoint(48.152975, 17.068688888);
+	GeoPoint BorderRightBottom = new GeoPoint(48.15184444, 17.07144166);
 	ArrayList<ArrayList< GeoPoint > > floors; // List of upper left and lower right corners for floors
 	ArrayList<String> floorsNumbers; // How the floors are visually represented
 	ArrayList<OverlayItem> markers; // All markers in the map
@@ -88,8 +93,11 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	ArrayList<ArrayList<String> > teacherNames; // Every element is arraylist of names of a teacher
 	ArrayList<String> teacherNamesPlain; // Every element is a string, full name of a teacher
 	ArrayList<GeoPoint> teacherPositions; // Positions of the teachers
+	ArrayList<Integer> teacherFloors; // Floor on which the desired teacher is
 	ArrayList<Integer> alive = new ArrayList<Integer>(); // Indicates if the marker is alive
-	ArrayList<OverlayItem> selectedPositions = new ArrayList<OverlayItem>(); // Positions selected in current search
+	ArrayList<OverlayItem> selectedPositions = new ArrayList<OverlayItem>(); // Positions selected for current floor
+	ArrayList<OverlayItem> globalSelectedPositions = new ArrayList<OverlayItem>(); // All positions selected in search
+	ArrayList<Integer> globalSelectedIndexes = new ArrayList<Integer>(); // All indexes of positions selected
 	OverlayItem movedItem = null; // Indicates if item is still moved
 	boolean movedItemPinned = true; // Indicates if the item, that is going to be moved, is still pinned
 	boolean canBeMoved;
@@ -99,6 +107,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	SearchTree tree; // The tree, where all the information for search are stored
 	ListView list; // List for search bar, where matching results are displayed
 	ListView floorList; // List, where the floors are displayed
+	ArrayList<TilesOverlay> tilesOverlays;
 	EditText edit; // Search bar
 	ArrayList<String> selection; // Array for "list"
 	ArrayAdapter<String> selectionArrayAdapter; // Adapter for the selection array..
@@ -120,6 +129,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	String filename; // Name of the file, where all the data is stored (can be relative path)
 	int x,y; // last position of pointer
 	ArrayList<OverlayItem> newItems = new ArrayList<OverlayItem>(); // Recently added items (before changing the search bar)
+	ArrayList<RadioButton> radioButtons = new ArrayList<RadioButton>();
 	
 	private Handler handler = new Handler() {
 		@Override
@@ -132,14 +142,30 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					NoticeDialogFragment d = new NoticeDialogFragment();
 					d.show(getFragmentManager(), "MarkerEdit");
 					getFragmentManager().executePendingTransactions();
+					addRadioButtonsListener(d);
 					if (d.getDialog() == null) {
 						Log.d("Tap","Dialog == null");
 					} else {
 						// Set the texts in edit bars corresponding to the former name and room
 						EditText n = (EditText) d.getDialog().findViewById(R.id.edit_name);
 						EditText r = (EditText) d.getDialog().findViewById(R.id.edit_room);
-						n.setText(editedItem.getTitle());
-						r.setText(editedItem.getSnippet());
+						radioButtons.set(0, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton0));
+						radioButtons.set(1, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton1));
+						radioButtons.set(2, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton2));
+						
+					//	EditText f = (EditText) d.getDialog().findViewById(R.id.edit_floor);
+						n.setText("");
+						r.setText("");
+						for (int i = 0; i < radioButtons.size(); i++) {
+							if (currentFloor == i) {
+								radioButtons.get(currentFloor).setChecked(true);
+							} else {
+								radioButtons.get(i).setChecked(false);
+							}
+						}
+						
+						
+					//	f.setText(teacherFloors.get(markers.indexOf(editedItem)).toString());
 					}
 					// Item is not moved, it's only being edited
 					movedItem = null;
@@ -149,7 +175,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 				mapView.getOverlays().remove(myOverlay);
 				myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
 				mapView.getOverlays().add(myOverlay);
-				RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) movedImage.getLayoutParams();
+			 	RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) movedImage.getLayoutParams();
 				Rect bounds = marker.getBounds();
 				lp.setMargins(x + bounds.left, y + bounds.top, 0, 0);
 				movedImage.setLayoutParams(lp);
@@ -275,11 +301,14 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 				selection.clear(); // Clear results written on the list
 				indexes.clear(); // Clear corresponding indexes to general array of names
 				selectedPositions.clear();
+				globalSelectedPositions.clear();
 				if (s.toString().isEmpty()) {
 					// Search bar is empty, add all the indexes !
 					for (int i = 0; i < markers.size(); i++) {
 						if (alive.get(i) == 1) {
-							selectedPositions.add(markers.get(i));
+							globalSelectedPositions.add(markers.get(i));
+							globalSelectedIndexes.add(i);
+							if (teacherFloors.get(i) == currentFloor) selectedPositions.add(markers.get(i));
 						}
 					}
 					hideView(list);
@@ -290,8 +319,12 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					for (int i = 0; i < indexes.size(); i++) {
 						if (selection.size() < maxListSize) {
 							if (alive.get(indexes.get(i)) == 1) { // Maybe the marker was already removed when editing data
+								globalSelectedPositions.add(markers.get(indexes.get(i)));
+								globalSelectedIndexes.add(indexes.get(i));
 								selection.add(teacherNamesPlain.get(indexes.get(i)));
-								selectedPositions.add(markers.get(indexes.get(i)));	
+								if (teacherFloors.get(indexes.get(i)) == currentFloor) {
+									selectedPositions.add(markers.get(indexes.get(i)));	
+								}
 							}
 						} else {
 							break;
@@ -343,8 +376,9 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 				
 				// Find the corresponding floor and move to position
 				GeoPoint Middle = teacherPositions.get(indexes.get(arg2));
+				/*
 				for (int i = 0; i < floors.size(); i++) {
-					GeoPoint tmpLT = floors.get(i).get(0);
+					GeoPoint tmpLT = floors.get(i).get(0);index
 					GeoPoint tmpRB = floors.get(i).get(1);
 					if ((Middle.getLatitudeE6() < tmpLT.getLatitudeE6()) && (Middle.getLongitudeE6() > tmpLT.getLongitudeE6()) &&
 							(tmpRB.getLatitudeE6() < Middle.getLatitudeE6()) && (tmpRB.getLongitudeE6() > Middle.getLongitudeE6())) {
@@ -353,6 +387,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 						break;
 					}
 				}
+				*/
+				changeFloorTo(teacherFloors.get(indexes.get(arg2)));
 				mapController.setCenter(teacherPositions.get(indexes.get(arg2)));
 				// Set text in the search bar as full name without the room
 				StringBuilder tmpname = new StringBuilder(teacherNamesPlain.get(indexes.get(arg2)));
@@ -420,9 +456,20 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		dialogShown = false;
 		EditText name = (EditText) dialog.getDialog().findViewById(R.id.edit_name);
 		EditText room = (EditText) dialog.getDialog().findViewById(R.id.edit_room);
+		radioButtons.set(0, (RadioButton) dialog.getDialog().findViewById(R.id.radioFloorButton0));
+		radioButtons.set(1, (RadioButton) dialog.getDialog().findViewById(R.id.radioFloorButton1));
+		radioButtons.set(2, (RadioButton) dialog.getDialog().findViewById(R.id.radioFloorButton2));
 		Log.d("Positive Click", "Name: "+ name.getText().toString() + ", Room: " + room.getText().toString());
 		String newName = name.getText().toString();
-		String newRoom = room.getText().toString();	
+		String newRoom = room.getText().toString();
+		int newFloor = 0;
+		for (int i = 0; i < radioButtons.size(); i++) {
+			if (radioButtons.get(i).isChecked()) {
+				newFloor = i;
+				break;
+			}
+		}
+		Log.d("Positive Click","New Floor: " + newFloor);
 		OverlayItem tmp = new OverlayItem(newName, newRoom, editedItem.getPoint());
 		tmp.setMarker(marker);
 		tmp.setMarkerHotspot(HotspotPlace.CENTER);
@@ -432,6 +479,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		}
 		if (newItem) {
 			// Item is not edited, it's a new item
+			Log.d("Positive Click","Item is NEW");
 			markers.add(tmp);
 			for (int i = 0; i < newNameList.size()-1; i++) {
 				tree.addRecord(newNameList.get(i), markers.size()-1);
@@ -442,14 +490,20 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			alive.add(1);
 			// The item shall be displayed no matter what until the search bar changes
 			selectedPositions.add(tmp);
+			globalSelectedPositions.add(tmp);
+			globalSelectedIndexes.add(markers.size()-1);
 			newItems.add(tmp);
+			teacherFloors.add(newFloor);
+			Log.d("Positive click - New Item","Adding a teacher: " + teacherNamesPlain.get(teacherNamesPlain.size()-1) + " on the floor nr.: " + newFloor);
 			newItem = false;
 		} else {
 			// Item was edited, it's not new
 			// Find, where the marker is in general array and selection array
 			int index = markers.indexOf(editedItem);
-			int index2 = selectedPositions.indexOf(editedItem);	
+			int index2 = globalSelectedPositions.indexOf(editedItem);
+			int index3 = selectedPositions.indexOf(editedItem);
 			int indexNew = newItems.indexOf(editedItem);
+			globalSelectedPositions.set(index2, tmp);
 			// Create new OverlayItem with desired preferences
 			markers.set(index, tmp);
 			// Update the search tree
@@ -471,10 +525,25 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					newItems.set(indexNew, tmp);
 				}
 			}
-			Log.d("Positive Click","Index2 = " + index2);
+			Log.d("Positive Click - Edited Item","Index2 = " + index2);
+			if (newFloor != teacherFloors.get(index)) {
+				
+				// Teacher's floor has changed
+				
+				teacherFloors.set(index, newFloor);
+				Log.d("Positive Click - Edited Item","Teacher's new floor is: " + newFloor);
+					
+				// Single edit mode --> show the marker on the new floor
+				
+				changeFloorTo(newFloor);
+			} else {
+				Log.d("Positive Click - Edited Item","Floor hasn't changed");
+				if (index3 != -1) {
+					selectedPositions.set(index3, tmp);
+				}
+			}
 			selectionArrayAdapter.notifyDataSetChanged();
 			list.invalidate();
-			selectedPositions.set(index2, tmp);
 		}
 		// Update overlay
 		mapView.getOverlays().remove(myOverlay);
@@ -492,11 +561,16 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		// TODO Auto-generated method stub
 		dialogShown = false;
 		if (!newItem) {
+			
+			// Deleting the item
+			
 			if (editedItem == null) Log.d("Negative Click","editedItem == null");
 			int index = markers.indexOf(editedItem); // Global index of that item
 			alive.set(index, 0);
-			int index2 = selectedPositions.indexOf(editedItem); // Index into selection in search list
+			int index2 = globalSelectedPositions.indexOf(editedItem); // Index into selection in search list
 			int indexNew = newItems.indexOf(editedItem);
+			globalSelectedPositions.remove(editedItem);
+			globalSelectedIndexes.remove(index2);
 			selectedPositions.remove(editedItem);
 			if (!edit.getText().toString().isEmpty()) {
 				if (indexNew == -1) {
@@ -506,6 +580,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					newItems.remove(indexNew);
 				}
 			}
+			selectionArrayAdapter.notifyDataSetChanged();
 			mapView.getOverlays().remove(myOverlay);
 			myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
 			mapView.getOverlays().add(myOverlay);
@@ -534,7 +609,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					}
 					tmp += "#";
 					tmp += Double.toString((teacherPositions.get(i).getLatitudeE6()/1E6))+"#";
-					tmp += Double.toString((teacherPositions.get(i).getLongitudeE6()/1E6));
+					tmp += Double.toString((teacherPositions.get(i).getLongitudeE6()/1E6))+"$";
+					tmp += Integer.toString((teacherFloors.get(i)));
 					Log.d("Writing to file",tmp);
 					out.println(tmp);
 				}
@@ -547,6 +623,60 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			Log.d("Saving Error","Could not create file");
 			e.printStackTrace();
 		}
+	}
+
+	protected void changeFloorTo(int fl) {
+		
+		// Changes tileset to desired floor tileset... (floors are numbered from 0 up)
+		
+		if (currentFloor != fl) {
+			Log.d("Floor Click", "Floor number " + fl);
+			mapView.getOverlays().remove(tilesOverlays.get(currentFloor));
+			mapView.getOverlays().add(tilesOverlays.get(fl));
+			mapView.getOverlays().remove(myOverlay); // Add myOverlay into mapView if it's not there anymore
+			currentFloor = fl;
+			mapView.invalidate();
+			mapView.postInvalidate();
+			selectedPositions.clear();
+			
+			for (int i = 0; i < globalSelectedPositions.size(); i++) {
+				if (teacherFloors.get(globalSelectedIndexes.get(i)) == currentFloor) {
+					selectedPositions.add(globalSelectedPositions.get(i));
+				}
+			}
+			myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+			mapView.getOverlays().add(myOverlay);
+			mapView.invalidate(); 
+		}
+		
+	}
+	
+	protected void addRadioButtonsListener(NoticeDialogFragment d) {
+		
+		radioButtons.set(0, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton0));
+		radioButtons.set(1, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton1));
+		radioButtons.set(2, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton2));
+	
+		OnCheckedChangeListener listener = new OnCheckedChangeListener() {
+
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				if (!isChecked) {
+					Log.d("Checked Changed","Unchecking");
+				} else {
+					Log.d("Checked Changed","Unchecking old, checking new");
+					for (int i = 0; i < radioButtons.size(); i++) {
+						radioButtons.get(i).setChecked(false);
+					}
+					buttonView.setChecked(true);					
+				}
+			}
+		};
+		
+		for (int i = 0; i < radioButtons.size(); i++) {
+			radioButtons.get(i).setOnCheckedChangeListener(listener);
+		}
+		
 	}
 	
 	@Override
@@ -572,6 +702,10 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		tmpgp.add(new GeoPoint(48.192, 17.107));
 		floors.add(tmpgp);
 		
+		for (int i = 0; i < 3; i++) {
+			radioButtons.add(null);
+		}
+		
 		floorsNumbers = new ArrayList<String>( Arrays.asList("Prízemie","1.","2."));
 		currentFloor = 0;
 		
@@ -580,9 +714,11 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		// Rebuild the names and positions arrays from given extras
 		teacherNames = new ArrayList<ArrayList<String>>();
 		teacherPositions = new ArrayList<GeoPoint>();
+		teacherFloors = new ArrayList<Integer>();
 		teacherNamesPlain = new ArrayList<String>();
 		ArrayList<ArrayList<Double>> teacherPositionsTmp = new ArrayList<ArrayList<Double>>();
 		teacherNames = (ArrayList<ArrayList<String>>) extras.get("teacherNames");
+		teacherFloors = (ArrayList<Integer>) extras.get("teacherFloors");
 		teacherPositionsTmp = (ArrayList<ArrayList<Double>>) extras.get("teacherPositions");
 		for (int i = 0; i < teacherPositionsTmp.size(); i++) {
 			teacherPositions.add(new GeoPoint(teacherPositionsTmp.get(i).get(0), teacherPositionsTmp.get(i).get(1)));
@@ -615,6 +751,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		editButton = (ImageView) findViewById(R.id.edit_data_button);
 		saveButton = (ImageView) findViewById(R.id.save_data_button);
 		
+		Log.d("Init", "teacherFloors size is " + teacherFloors.size());
+		
 		// We start from explore mode
         editMode = false;
         showView(editButton);
@@ -626,7 +764,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
       //  mapView.setBuiltInZoomControls(true);  // Touch events don't work when zoom controls are enabled
         mapView.setMultiTouchControls(true); 
         
-        mapView.getController().setZoom(15);
+        mapView.getController().setZoom(18);
         
         editButton.setOnClickListener(new OnClickListener() {
 
@@ -645,8 +783,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         		// TODO Auto-generated method stub
         		editMode = false;
         		hideView(saveButton);
-        		showView(editButton);
         		saveDataToFile(filename);
+        		showView(editButton);
         	}
         });
 
@@ -772,11 +910,13 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 						if (newItem) {
 							canBeMoved = false;
 							timer.cancel();
+							timerRunning = false;
 						}
 						if (((movedItem != null) && (movedItemPinned)) && (!newItem) && (!dialogShown)) {
 							// Item was only clicked, not moved
 							canBeMoved = false;
 							timer.cancel();
+							timerRunning = false;
 							Log.d("Touch Event - Up", "Showing Dialog");
 							// Therefore, it's going to be edited
 							editedItem = movedItem;
@@ -785,14 +925,20 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 							NoticeDialogFragment d = new NoticeDialogFragment();
 							d.show(getFragmentManager(), "MarkerEdit");
 							getFragmentManager().executePendingTransactions();
+							addRadioButtonsListener(d);
 							if (d.getDialog() == null) {
 								Log.d("Tap","Dialog == null");
 							} else {
 								// Set the texts in edit bars corresponding to the former name and room
 								EditText n = (EditText) d.getDialog().findViewById(R.id.edit_name);
 								EditText r = (EditText) d.getDialog().findViewById(R.id.edit_room);
+								radioButtons.set(0, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton0));
+								radioButtons.set(1, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton1));
+								radioButtons.set(2, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton2));
 								n.setText(editedItem.getTitle());
 								r.setText(editedItem.getSnippet());
+								radioButtons.get(teacherFloors.get(markers.indexOf(editedItem))).setChecked(true);
+							//	f.setText(teacherFloors.get(markers.indexOf(editedItem)).toString());
 							}
 							// Item is not moved, it's only being edited
 							movedItem = null;
@@ -808,6 +954,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 							// Update all the arrays regarding this marker
 							selectedPositions.add(oi);
 							int index = markers.indexOf(movedItem);
+							int index2 = globalSelectedPositions.indexOf(movedItem);
+							globalSelectedPositions.set(index2, oi);
 							markers.set(index, oi);
 							teacherPositions.set(index, g);
 							// Hide the image
@@ -843,8 +991,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         	
         });
         
-        mapView.getController().setCenter(new GeoPoint(48.151836,17.071214)); // Right upon FMFI UK
-        
+        mapView.getController().setCenter(new GeoPoint(48.15240972,17.070065274)); // Right upon FMFI UK
     	lastSearch = "";
     	
     	showSearchPanel();
@@ -873,36 +1020,64 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 
 			public void onItemClick(AdapterView<?> arg0, View arg1,
 					int arg2, long arg3) {
-				// Move to the corresponding floor and set center above the same point
-				mapView.setScrollableAreaLimit(new BoundingBoxE6(floors.get(arg2).get(0).getLatitudeE6(), floors.get(arg2).get(1).getLongitudeE6(),
-						floors.get(arg2).get(1).getLatitudeE6(), floors.get(arg2).get(0).getLongitudeE6()));
-
-				GeoPoint Middle = (GeoPoint) mapView.getProjection().fromPixels(mapView.getWidth()/2, mapView.getHeight()/2);
-				mapController.setCenter(new GeoPoint(floors.get(arg2).get(0).getLatitudeE6() + Middle.getLatitudeE6() - floors.get(currentFloor).get(0).getLatitudeE6(),
-						floors.get(arg2).get(0).getLongitudeE6() + Middle.getLongitudeE6() - floors.get(currentFloor).get(0).getLongitudeE6()));
-				mapView.invalidate();
-				currentFloor = arg2;
-				hideView(floorList);
+				changeFloorTo(arg2);
+				hideView(floorList);				
 			}
     		
     	});
         list.setAlpha((float) 1);
+        
+        mapView.setMapListener(new MapAdapter() {
+        	
+        	public boolean onZoom(ZoomEvent event) {
+        		mapView.postInvalidate();
+				return false;
+        	}
+        	
+        });
         
         selection = new ArrayList<String>(); // Results matching the searched string
         
         selectionArrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, selection);
         list.setAdapter(selectionArrayAdapter);
         
+        tilesOverlays = new ArrayList<TilesOverlay>();
+        
         // This section makes the application load maps from assets folder
-        final AssetsTileSource ASSETS_TILE_SOURCE = new AssetsTileSource(this.getAssets(), "Map",  ResourceProxy.string.offline_mode, mapView.getMinZoomLevel(), mapView.getMaxZoomLevel(), 256, ".jpg"); // This will load from assets/Map/14/xxxx/yyyyy.png
+        final AssetsTileSource ASSETS_TILE_SOURCE1 = new AssetsTileSource(this.getAssets(), "floor1",  ResourceProxy.string.offline_mode, mapView.getMinZoomLevel(), mapView.getMaxZoomLevel(), 256, ".jpg"); // This will load from assets/Map/14/xxxx/yyyyy.png
 
-        MapTileModuleProviderBase moduleProvider = new MapTileFileAssetsProvider(ASSETS_TILE_SOURCE);
-        SimpleRegisterReceiver simpleReceiver = new SimpleRegisterReceiver(this);
-        MapTileProviderArray tileProviderArray = new MapTileProviderArray(ASSETS_TILE_SOURCE, simpleReceiver, new MapTileModuleProviderBase[] { moduleProvider });
+        MapTileModuleProviderBase moduleProvider1 = new MapTileFileAssetsProvider(ASSETS_TILE_SOURCE1);
+        SimpleRegisterReceiver simpleReceiver1 = new SimpleRegisterReceiver(this);
+        MapTileProviderArray tileProviderArray1 = new MapTileProviderArray(ASSETS_TILE_SOURCE1, simpleReceiver1, new MapTileModuleProviderBase[] { moduleProvider1 });
 
-        TilesOverlay tilesOverlay = new TilesOverlay(tileProviderArray, getApplicationContext());
-		tilesOverlay.setLoadingBackgroundColor(Color.GRAY);
-        mapView.getOverlays().add(tilesOverlay);
+        tilesOverlays.add(new TilesOverlay(tileProviderArray1, getApplicationContext()));
+		tilesOverlays.get(0).setLoadingBackgroundColor(Color.WHITE);
+		tilesOverlays.get(0).setLoadingLineColor(Color.WHITE);
+		
+
+        final AssetsTileSource ASSETS_TILE_SOURCE2 = new AssetsTileSource(this.getAssets(), "floor2",  ResourceProxy.string.offline_mode, mapView.getMinZoomLevel(), mapView.getMaxZoomLevel(), 256, ".jpg"); // This will load from assets/Map/24/xxxx/yyyyy.png
+
+        MapTileModuleProviderBase moduleProvider2 = new MapTileFileAssetsProvider(ASSETS_TILE_SOURCE2);
+        SimpleRegisterReceiver simpleReceiver2 = new SimpleRegisterReceiver(this);
+        MapTileProviderArray tileProviderArray2 = new MapTileProviderArray(ASSETS_TILE_SOURCE2, simpleReceiver2, new MapTileModuleProviderBase[] { moduleProvider2 });
+
+        tilesOverlays.add(new TilesOverlay(tileProviderArray2, getApplicationContext()));
+		tilesOverlays.get(1).setLoadingBackgroundColor(Color.WHITE);
+		tilesOverlays.get(1).setLoadingLineColor(Color.WHITE);
+		
+
+        final AssetsTileSource ASSETS_TILE_SOURCE3 = new AssetsTileSource(this.getAssets(), "floor3",  ResourceProxy.string.offline_mode, mapView.getMinZoomLevel(), mapView.getMaxZoomLevel(), 256, ".jpg"); // This will load from assets/Map/34/xxxx/yyyyy.png
+
+        MapTileModuleProviderBase moduleProvider3 = new MapTileFileAssetsProvider(ASSETS_TILE_SOURCE3);
+        SimpleRegisterReceiver simpleReceiver3 = new SimpleRegisterReceiver(this);
+        MapTileProviderArray tileProviderArray3 = new MapTileProviderArray(ASSETS_TILE_SOURCE3, simpleReceiver3, new MapTileModuleProviderBase[] { moduleProvider3 });
+
+        tilesOverlays.add(new TilesOverlay(tileProviderArray3, getApplicationContext()));
+		tilesOverlays.get(2).setLoadingBackgroundColor(Color.WHITE);
+		tilesOverlays.get(2).setLoadingLineColor(Color.WHITE);
+		
+		
+        mapView.getOverlays().add(tilesOverlays.get(currentFloor));
         
         // Simple overlay
         markers = new ArrayList<OverlayItem>();
@@ -940,7 +1115,11 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         };
         
 		for (int i = 0; i < markers.size(); i++) {
-			selectedPositions.add(markers.get(i));
+			if (teacherFloors.get(i) == currentFloor) {
+				selectedPositions.add(markers.get(i));
+			}
+			globalSelectedPositions.add(markers.get(i));
+			globalSelectedIndexes.add(i);
 		}
 		myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
 		mapView.getOverlays().add(myOverlay);
@@ -963,6 +1142,10 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent ev) {		
+		
+		if (dialogShown) {
+			dialogShown = false;
+		}
 		
 		return super.dispatchTouchEvent(ev);
 		

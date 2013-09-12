@@ -1,7 +1,7 @@
 This is resource file containing data about teachers in specific format. Every teacher has to be in one single line. Firstly, there have to be Strings, each preceeded by [space], representing the name of the teacher and the last string representing his office. Last 2 fields are Floats preceeded by #. The data block starts where is a single line containing only the String "#begin" and ends with a single line containing only the String "#end". If there are no #begin or #end to be found, exception will be thrown.
 #begin
- Mgr. Martin Králik M25#48.152312#17.069064
- RNDr. Michal Foríšek PhD. M263#48.152312#17.069568
- Prof. RNDr. Branislav Rovan PhD. M259#48.152312#17.069998
- RNDr. Martin Sleziak PhD. M129#48.152312#17.0702311
+ Mgr. Martin Králik M25#48.152312#17.069064$0
+ RNDr. Michal Foríšek PhD. M263#48.152312#17.069568$2
+ Prof. RNDr. Branislav Rovan PhD. M259#48.152312#17.069998$2
+ RNDr. Martin Sleziak PhD. M129#48.152312#17.0702311$1
 #end

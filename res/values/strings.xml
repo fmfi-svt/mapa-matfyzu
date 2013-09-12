@@ -19,9 +19,13 @@
     <string name="button_floor_sk">Poschodie</string>
     <string name="dialog_name">Meno:</string>
     <string name="dialog_room">Miestnost:</string>
+    <string name="dialog_floor">Poschodie:</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_delete">Vymazať</string>
     <string name="dialog_edit_marker">Upraviť marker</string>
+    <string name="radioFloor0">0.</string>
+    <string name="radioFloor1">1.</string>
+    <string name="radioFloor2">2.</string>
     
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>

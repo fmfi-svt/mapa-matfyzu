@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
 	
 	ArrayList<ArrayList<String>> teacherNames;
 	ArrayList<ArrayList<Double>> teacherPositions;
+	ArrayList<Integer> teacherFloors;
 	private boolean createNewFile;
 	Scanner in;
 	PrintStream out;
@@ -40,6 +41,7 @@ public class MainActivity extends Activity {
 		}
 		
 		boolean fl = false;
+		boolean in = false;
 		
 		while (index < s.length()) {
 			if (s.charAt(index-1) == '#') {
@@ -47,15 +49,23 @@ public class MainActivity extends Activity {
 			} else {
 				fl = false;
 			}
+			if (s.charAt(index-1) == '$') {
+				in = true;
+			} else {
+				in = false;
+			}
 			
 			String tmp = new String();
-			while ((index < s.length()) && ((s.charAt(index) != ' ') && (s.charAt(index) != '#'))) {
+			while ((index < s.length()) && (s.charAt(index) != ' ') && (s.charAt(index) != '#') && (s.charAt(index) != '$')) {
 				tmp += s.charAt(index);
 				index++;
 			}
 			if (fl) {
 				Double ftmp = new Double(Double.parseDouble(tmp));
 				res.add(ftmp);
+			} else if (in) {
+				Integer itmp = new Integer(Integer.parseInt(tmp));
+				res.add(itmp);
 			} else {
 				res.add(tmp);	
 			}
@@ -74,6 +84,7 @@ public class MainActivity extends Activity {
         
 		teacherNames = new ArrayList<ArrayList<String>>();
 		teacherPositions = new ArrayList<ArrayList<Double>>();
+		teacherFloors = new ArrayList<Integer>();
         setContentView(R.layout.activity_main);
         createNewFile = false;
         
@@ -116,12 +127,18 @@ public class MainActivity extends Activity {
 				ArrayList<String> tmpnames = new ArrayList<String>();
 				ArrayList<Double> tmppositions = new ArrayList<Double>();
 				for (int i = 0; i < tmp.size(); i++) {
-					if (tmp.get(i).getClass() != Double.class) {
-						tmpnames.add(tmp.get(i).toString());
-					} else {
+					if (tmp.get(i).getClass() == Integer.class) {
+						Log.d("Loading teachers","Integer found");
+						teacherFloors.add((Integer) tmp.get(i));
+					} else if (tmp.get(i).getClass() == Double.class) {
+						Log.d("Loading teachers","Double found");
 						tmppositions.add((Double) tmp.get(i));
+					} else {
+						tmpnames.add(tmp.get(i).toString());
+						Log.d("Loading teachers","String found");
 					}
 				}
+				
 				teacherNames.add(tmpnames);
 				teacherPositions.add(tmppositions);
 				count++;
@@ -152,11 +169,16 @@ public class MainActivity extends Activity {
 		
 	//	filename = getFilesDir().getPath().toString()+"/names.txt";
 		
+		for (int i = 0; i < teacherFloors.size(); i++) {
+			Log.d("Loading teachers", ""+teacherFloors.get(i));
+		}
+		
 		Intent intent = new Intent(this, OSMDroidMapActivity.class);
 		for (int i = 0; i < teacherNames.size(); i++) {
 			intent.putExtra("filename", filename);
     		intent.putExtra("teacherNames", teacherNames);
     		intent.putExtra("teacherPositions", teacherPositions);
+    		intent.putExtra("teacherFloors", teacherFloors);
     	}
 		startActivity(intent);
     }
