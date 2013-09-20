@@ -22,6 +22,7 @@ public class NoticeDialogFragment extends DialogFragment {
     public interface NoticeDialogListener {
         public void onDialogPositiveClick(NoticeDialogFragment dialog);
         public void onDialogNegativeClick(NoticeDialogFragment dialog);
+        public void onDialogStart(NoticeDialogFragment dialog);
     }
     
     // Use this instance of the interface to deliver action events
@@ -65,5 +66,11 @@ public class NoticeDialogFragment extends DialogFragment {
                });
         return builder.create();
     }
+	
+	@Override
+	public void onStart() {
+		super.onStart();
+		mListener.onDialogStart(NoticeDialogFragment.this);
+	}
 	
 }

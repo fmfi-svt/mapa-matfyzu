@@ -22,7 +22,7 @@
     <string name="dialog_floor">Poschodie:</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_delete">Vymazať</string>
-    <string name="dialog_edit_marker">Upraviť marker</string>
+    <string name="dialog_edit_marker">Upraviť značku</string>
     <string name="radioFloor0">0.</string>
     <string name="radioFloor1">1.</string>
     <string name="radioFloor2">2.</string>
@@ -30,7 +30,7 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="gray">#BBBBBB</color>
-    <string name="text_initializing">Initializing...</string>
+    <string name="text_initializing">Dovidenia!</string>
 
 
 </resources>

@@ -1,7 +1,33 @@
-This is resource file containing data about teachers in specific format. Every teacher has to be in one single line. Firstly, there have to be Strings, each preceeded by [space], representing the name of the teacher and the last string representing his office. Last 2 fields are Floats preceeded by #. The data block starts where is a single line containing only the String "#begin" and ends with a single line containing only the String "#end". If there are no #begin or #end to be found, exception will be thrown.
 #begin
- Mgr. Martin Králik M25#48.152312#17.069064$0
- RNDr. Michal Foríšek PhD. M263#48.152312#17.069568$2
+ Mgr. Martin Králik M25#48.152364#17.069071$0
+ RNDr. Michal Foríšek PhD. M263#48.152303#17.070213$2
  Prof. RNDr. Branislav Rovan PhD. M259#48.152312#17.069998$2
- RNDr. Martin Sleziak PhD. M129#48.152312#17.0702311$1
+ RNDr. Martin Sleziak PhD. M129#48.15238#17.068794$1
+ Doc. RNDr. Eugen Viszus CSC. M180#48.152304#17.070901$1
+ RNDr. Peter Švaňa CSc. M179#48.152303#17.070862$1
+ Ján Valášek Csc. M178#48.152297#17.070809$1
+ Zuzana Ballayová M176#48.152294#17.070707$1
+ Doc. RNDr. Ivan Kupka PhD. M175#48.152292#17.070656$1
+ RNDr. František Jaroš PhD. M174#48.152299#17.070608$1
+ Doc. RNDr. Ján Mózer DrSc. M173#48.152303#17.070554$1
+ RNDr. Kristína Rostás PhD. M172#48.152296#17.070508$1
+ Mgr. Petra Jursová M172#48.152303#17.070511$1
+ Mgr. Martina Babinská M172#48.152301#17.070511$1
+ Ing. Ján Petrík M171#48.15231#17.070455$1
+ Mgr. Pavol Mederly M171#48.152287#17.070457$1
+ Prof. RNDr. Jaroslav Jaroš CSc. M170#48.152292#17.070398$1
+ Mgr. Milada Gurová M169#48.152301#17.070358$1
+ RNDr. Pavol Žibrita M168#48.152299#17.070302$1
+ Tomáš Styk M168#48.152308#17.070305$1
+ RNDr. Jana Slávková M167#48.152301#17.070256$1
+ Doc. RNDr. Vladimír Toma PhD. M166#48.152297#17.070205$1
+ Ing. Štefan Gašpar M165#48.152296#17.070154$1
+ Mgr. Milan Babušík M164#48.152294#17.070103$1
+ Mgr. Alexander Maťašovský M160#48.152294#17.070004$1
+ Mgr. Ivan Kolesár M160#48.152304#17.070001$1
+ Doc. RNDr. Pavel Chalmovianský PhD. M158#48.152304#17.069913$1
+ Doc. RNDr. Štefan Solčan PhD. M157#48.152308#17.069873$1
+ Doc. RNDr. Miloš Božek CSc. M156#48.152304#17.069824$1
+ Doc. RNDr. Eduard Boďa PhD. M155#48.152292#17.069787$1
+ RNDr. Marianna Polednová PhD. M154#48.152301#17.069728$1
 #end

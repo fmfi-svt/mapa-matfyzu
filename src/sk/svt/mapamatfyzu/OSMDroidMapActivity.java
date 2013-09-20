@@ -87,9 +87,12 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	GeoPoint BorderRightBottom = new GeoPoint(48.15184444, 17.07144166);
 	ArrayList<ArrayList< GeoPoint > > floors; // List of upper left and lower right corners for floors
 	ArrayList<String> floorsNumbers; // How the floors are visually represented
-	ArrayList<OverlayItem> markers; // All markers in the map
+	ArrayList<OverlayItem> markers; // All markers on the map
+	ArrayList<OverlayItem> markersInvisible; // All markers on the map with invisible picture
 	Drawable marker; // Appearance of the marker used
-	ItemizedOverlay<OverlayItem> myOverlay; // Overlay used for all the markers
+	Drawable markerInvisible; // Invisible marker .. obviously
+	ItemizedOverlay<OverlayItem> myOverlay; // Overlay used for current marker selection
+	ItemizedOverlay<OverlayItem> allMarkersOverlay; // Overlay used for displaying all the markers (invisible)
 	ArrayList<ArrayList<String> > teacherNames; // Every element is arraylist of names of a teacher
 	ArrayList<String> teacherNamesPlain; // Every element is a string, full name of a teacher
 	ArrayList<GeoPoint> teacherPositions; // Positions of the teachers
@@ -122,20 +125,26 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	boolean newItem;
 	boolean timerRunning = false; // Only one timer can be running at time
 	boolean dialogShown = false; // Only one dialog can be shown at a time
+	boolean dialogStarted = false; // Controlls if the dialog was actually shown to the user
 	int maxListSize = 3;
 	ImageView editButton; // Button for switching to edit mode
 	ImageView saveButton; // Button for saving edited data
 	Timer timer;
 	String filename; // Name of the file, where all the data is stored (can be relative path)
 	int x,y; // last position of pointer
+	int lastPointerCount = 1; // Number of pointers on the last touch event
 	ArrayList<OverlayItem> newItems = new ArrayList<OverlayItem>(); // Recently added items (before changing the search bar)
 	ArrayList<RadioButton> radioButtons = new ArrayList<RadioButton>();
+	long lowestDist;
+	OverlayItem lowestDistItem;
+	long distTreshold = 30;
 	
 	private Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			if (newItem) {
 				if (!dialogShown) {
+					Toast.makeText(OSMDroidMapActivity.this, "Nová značka", Toast.LENGTH_SHORT).show();
 					dialogShown = true;
 					editedItem = movedItem;
 					// Show the custom dialog for editing markers
@@ -171,6 +180,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					movedItem = null;
 				}
 			} else {
+				Toast.makeText(OSMDroidMapActivity.this, "Premiestniť učiteľa " + movedItem.mTitle, Toast.LENGTH_SHORT).show();
 				selectedPositions.remove(movedItem);
 				mapView.getOverlays().remove(myOverlay);
 				myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
@@ -306,9 +316,15 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					// Search bar is empty, add all the indexes !
 					for (int i = 0; i < markers.size(); i++) {
 						if (alive.get(i) == 1) {
-							globalSelectedPositions.add(markers.get(i));
-							globalSelectedIndexes.add(i);
-							if (teacherFloors.get(i) == currentFloor) selectedPositions.add(markers.get(i));
+							if (editMode) {
+								globalSelectedPositions.add(markers.get(i));
+								globalSelectedIndexes.add(i);
+								if (teacherFloors.get(i) == currentFloor) selectedPositions.add(markers.get(i));
+							} else {
+								globalSelectedPositions.add(markersInvisible.get(i));
+								globalSelectedIndexes.add(i);
+								if (teacherFloors.get(i) == currentFloor) selectedPositions.add(markersInvisible.get(i));
+							}
 						}
 					}
 					hideView(list);
@@ -454,6 +470,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	public void onDialogPositiveClick(NoticeDialogFragment dialog) {
 		// TODO Auto-generated method stub
 		dialogShown = false;
+		dialogStarted = false;
 		EditText name = (EditText) dialog.getDialog().findViewById(R.id.edit_name);
 		EditText room = (EditText) dialog.getDialog().findViewById(R.id.edit_room);
 		radioButtons.set(0, (RadioButton) dialog.getDialog().findViewById(R.id.radioFloorButton0));
@@ -488,10 +505,12 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			teacherNamesPlain.add(newName + " (" + newRoom + ")");
 			teacherPositions.add(editedItem.getPoint());
 			alive.add(1);
-			// The item shall be displayed no matter what until the search bar changes
-			selectedPositions.add(tmp);
-			globalSelectedPositions.add(tmp);
-			globalSelectedIndexes.add(markers.size()-1);
+			if (currentFloor == newFloor) {
+				// The item shall be displayed no matter what until the search bar changes
+				selectedPositions.add(tmp);
+				globalSelectedPositions.add(tmp);
+				globalSelectedIndexes.add(markers.size()-1);
+			}
 			newItems.add(tmp);
 			teacherFloors.add(newFloor);
 			Log.d("Positive click - New Item","Adding a teacher: " + teacherNamesPlain.get(teacherNamesPlain.size()-1) + " on the floor nr.: " + newFloor);
@@ -560,6 +579,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	public void onDialogNegativeClick(NoticeDialogFragment dialog) {
 		// TODO Auto-generated method stub
 		dialogShown = false;
+		dialogStarted = false;
 		if (!newItem) {
 			
 			// Deleting the item
@@ -618,6 +638,15 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			out.println("#end");
 			out.close();
 			
+			markersInvisible.clear();
+			
+			for (int i = 0; i < markers.size(); i++) {
+				OverlayItem oitem = new OverlayItem(markers.get(i).mTitle, markers.get(i).mDescription, markers.get(i).mGeoPoint);
+				oitem.setMarkerHotspot(HotspotPlace.CENTER);
+				oitem.setMarker(markerInvisible);
+				markersInvisible.add(oitem);
+			}
+			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			Log.d("Saving Error","Could not create file");
@@ -633,10 +662,17 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			Log.d("Floor Click", "Floor number " + fl);
 			mapView.getOverlays().remove(tilesOverlays.get(currentFloor));
 			mapView.getOverlays().add(tilesOverlays.get(fl));
-			mapView.getOverlays().remove(myOverlay); // Add myOverlay into mapView if it's not there anymore
+			mapView.getOverlays().remove(myOverlay);
 			currentFloor = fl;
 			mapView.invalidate();
 			mapView.postInvalidate();
+			int sels = edit.getSelectionStart();
+			int sele = edit.getSelectionEnd();
+			edit.setText(edit.getText().toString());
+			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+			edit.setSelection(sels, sele);
+			hideView(list);    
+			/*
 			selectedPositions.clear();
 			
 			for (int i = 0; i < globalSelectedPositions.size(); i++) {
@@ -646,6 +682,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			}
 			myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
 			mapView.getOverlays().add(myOverlay);
+			*/
 			mapView.invalidate(); 
 		}
 		
@@ -709,7 +746,8 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 		floorsNumbers = new ArrayList<String>( Arrays.asList("Prízemie","1.","2."));
 		currentFloor = 0;
 		
-		marker = this.getResources().getDrawable(R.drawable.blue_dot5); // Set appearance of the markers
+		marker = this.getResources().getDrawable(R.drawable.blue_dot4); // Set appearance of the markers
+		markerInvisible = this.getResources().getDrawable(R.drawable.marker_invisible); // Set the marker for overview to be invisible
 		
 		// Rebuild the names and positions arrays from given extras
 		teacherNames = new ArrayList<ArrayList<String>>();
@@ -771,6 +809,12 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 				editMode = true;
+				int sels = edit.getSelectionStart();
+				int sele = edit.getSelectionEnd();
+				edit.setText(edit.getText().toString());
+				edit.setSelection(sels, sele);
+				imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+				hideView(list);
 				hideView(editButton);
 				showView(saveButton);
 			}
@@ -784,6 +828,12 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         		editMode = false;
         		hideView(saveButton);
         		saveDataToFile(filename);
+				int sels = edit.getSelectionStart();
+				int sele = edit.getSelectionEnd();
+				edit.setText(edit.getText().toString());
+				edit.setSelection(sels, sele);
+				imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+				hideView(list);
         		showView(editButton);
         	}
         });
@@ -800,178 +850,261 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					hideView(list);	
 					result = true;
 				}
-				
-				Log.d("Touch Event", "Any");
-				
-				// Treshold in milliseconds between click and long click
-				long pressTimeTreshold = 700;
-				
-				x = (int)event.getX();
-				y = (int)event.getY();
-				
-				// If they are out of range, set them to the closest approximation
-				if (y < 0) y = 0;
-				if (x < 0) x = 0;
-				
-				if (editMode) {
-					if (event.getAction() == MotionEvent.ACTION_DOWN) {
-						if (!dialogShown) {
-							// Find out which item was clicked on
-							for (OverlayItem item : selectedPositions) {
-								Point p = new Point(0,0);
-								mapView.getProjection().toPixels(item.getPoint(), p);
-								Point p2 = new Point(0,0);							
-								mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0, 0), p2);
-								Rect bounds = marker.getBounds();
-								
-								Log.d("Touch Event - Down", "Point X:" + (p.x - p2.x) + ", Y:" + (p.y - p2.y));
-								Log.d("Touch Event - Down", "Position X:" + x + ", Y:" + y);
-								Log.d("Touch Event - Down", "Marker Bounds: L:" + bounds.left + ", R:" + bounds.right + ", B:" + bounds.bottom + ", T:" + bounds.top); 
-								
-								if (bounds.contains(p2.x + x - p.x, p2.y + y - p.y)) {
-									// Item found !
-									Log.d("Touch Event - Down", "Item hit !");
-									movedItem = item;
-									// Found, but it's still pinned !
-									movedItemPinned = true;
-									// Start the timer
-									pressTime = System.currentTimeMillis();
-									canBeMoved = true;
-									newItem = false;
+				lastPointerCount = event.getPointerCount();
+				if (event.getPointerCount() == 1) {
+					Log.d("Touch Event", "Any");
+					
+					// Treshold in milliseconds between click and long click
+					long pressTimeTreshold = 700;
+					
+					x = (int)event.getX();
+					y = (int)event.getY();
+					
+					// If they are out of range, set them to the closest approximation
+					if (y < 0) y = 0;
+					if (x < 0) x = 0;
+					
+					if (editMode) {
+						if (event.getAction() == MotionEvent.ACTION_DOWN) {
+							if (!dialogShown) {
+								// Find out which item was clicked on
+								lowestDist = 10000;
+								lowestDistItem = null;
+								for (OverlayItem item : selectedPositions) {
+									Point p = new Point(0,0);
+									mapView.getProjection().toPixels(item.getPoint(), p);
+									Point p2 = new Point(0,0);							
+									mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0, 0), p2);
+									Rect bounds = marker.getBounds();
 									
-									// We don't need to keep on searching, the item was found..
-									break;
+									Log.d("Touch Event - Down", "Point X:" + (p.x - p2.x) + ", Y:" + (p.y - p2.y));
+									Log.d("Touch Event - Down", "Position X:" + x + ", Y:" + y);
+									Log.d("Touch Event - Down", "Marker Bounds: L:" + bounds.left + ", R:" + bounds.right + ", B:" + bounds.bottom + ", T:" + bounds.top); 
+									
+									long dist = sqr((p.x - p2.x) - x) + sqr((p.y - p2.y)- y);
+									
+									if ((dist < lowestDist) || (lowestDistItem == null)) {
+										lowestDist = dist;
+										lowestDistItem = item;										
+									}
+									/*
+									if (bounds.contains(p2.x + x - p.x, p2.y + y - p.y)) {
+										// Item found !
+										Log.d("Touch Event - Down", "Item hit !");
+										movedItem = item;
+										// Found, but it's still pinned !
+										movedItemPinned = true;
+										// Start the timer
+										pressTime = System.currentTimeMillis();
+										canBeMoved = true;
+										newItem = false;
+										
+										// We don't need to keep on searching, the item was found..
+										break;
+										
+									}
+									*/
 									
 								}
 								
-							}
-							if (movedItem == null) {
-								movedItem = new OverlayItem("","",(GeoPoint) mapView.getProjection().fromPixels(x, y));
-								movedItemPinned = true;
-								newItem = true;
-								canBeMoved = true;							
-							}
-							// Start timer for long click
-							if (timerRunning) {
-								canBeMoved = false;
-							} else {
-								timerRunning = true;
-								timer = new Timer();
-								timer.schedule(new TimerTask() {
-		
-									@Override
-									public void run() {
-										Log.d("Timer time elapsed", "canBeMoved == " + canBeMoved);
-										if (canBeMoved) {
-											// Item was pinned, so unpin it first
-											movedItemPinned = false;	
-											Log.d("Touch Event - Move", "Unpinning");
-											// That means to remove item from overlays and add an image or marker for faster dragging
-											handler.sendEmptyMessage(0);
-										} else {
-											movedItem = null;
-											timerRunning = false;
-										}
+								if (lowestDistItem != null) { // It actually had searched through some items
+									if (lowestDist < sqr(distTreshold)) {
+										// Item found !
+										Log.d("Touch Event - Down", "Item hit !");
+										movedItem = lowestDistItem;
+										// Found, but it's still pinned !
+										movedItemPinned = true;
+										// Start the timer
+										pressTime = System.currentTimeMillis();
+										canBeMoved = true;
+										newItem = false;
+											
 									}
+								}
+								
+								if (movedItem == null) {
+									movedItem = new OverlayItem("","",(GeoPoint) mapView.getProjection().fromPixels(x, y));
+									movedItemPinned = true;
+									newItem = true;
+									canBeMoved = true;							
+								}
+								// Start timer for long click
+								if (timerRunning) {
+									canBeMoved = false;
+								} else {
+									timerRunning = true;
+									timer = new Timer();
+									timer.schedule(new TimerTask() {
+			
+										@Override
+										public void run() {
+											
+											// THIS AREA HAS TO BE FIXED !! 
+											
+											// DOESN'T WORK PROPERLY WHEN ZOOMING BY MULTITOUCHING
+											
+											
+											if (lastPointerCount == 1) {
+												Log.d("Timer time elapsed", "canBeMoved == " + canBeMoved);
+												if (!dialogShown) {
+													if (canBeMoved) {
+														// Item was pinned, so unpin it first
+														movedItemPinned = false;	
+														Log.d("Touch Event - Move", "Unpinning");
+														// That means to remove item from overlays and add an image or marker for faster dragging
+														handler.sendEmptyMessage(0);
+													} else {
+														movedItem = null;
+														timerRunning = false;
+													}
+												}
+											}
+										}
+										
+									}, pressTimeTreshold);
+								}
+								result = true;
+							}
+						}
+						if (event.getAction() == MotionEvent.ACTION_MOVE) {
+							if (movedItem != null) {
+								// There is some item, that was previously clicked on
+								Log.d("Touch Event - Move","Press time = " + (System.currentTimeMillis() - pressTime));
+								if (movedItemPinned) {
+									// That item is clicked for less than the threshold time
 									
-								}, pressTimeTreshold);
+									// Check, if the pointer is still on the marker
+									Point p = new Point(0,0);
+									mapView.getProjection().toPixels(movedItem.getPoint(), p);
+									Point p2 = new Point(0,0);
+									mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0,0), p2);
+									
+									if (!marker.getBounds().contains(p2.x + x - p.x , p2.y + y - p.y)) {
+										// Pointer is not on the marker anymore, user has probably lost interest in this marker
+										canBeMoved = false;
+									}
+								} else {
+									// Item is already unpinned, we just need to move it
+									RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) movedImage.getLayoutParams();
+									Rect bounds = marker.getBounds();
+									lp.setMargins(x + bounds.left, y + bounds.top, 0, 0);
+									movedImage.setLayoutParams(lp);
+								}
 							}
 							result = true;
 						}
-					}
-					if (event.getAction() == MotionEvent.ACTION_MOVE) {
-						if (movedItem != null) {
-							// There is some item, that was previously clicked on
-							Log.d("Touch Event - Move","Press time = " + (System.currentTimeMillis() - pressTime));
-							if (movedItemPinned) {
-								// That item is clicked for less than the threshold time
+						if (event.getAction() == MotionEvent.ACTION_UP) {
+							if (newItem) {
+								canBeMoved = false;
+								timer.cancel();
+								timerRunning = false;
+							}
+							if (((movedItem != null) && (movedItemPinned)) && (!newItem) && (!dialogShown)) {
+								// Item was only clicked, not moved
+								canBeMoved = false;
+								// Show the custom dialog for editing markers
+								dialogShown = true;
+								timer.cancel();
+								timerRunning = false;
+								// Therefore, it's going to be edited
+								editedItem = movedItem;
+								NoticeDialogFragment d = new NoticeDialogFragment();
+								d.show(getFragmentManager(), "MarkerEdit");
+								getFragmentManager().executePendingTransactions();
+								Log.d("Touch Event - Up", "Showing Dialog");
+								dialogShown = true;
 								
-								// Check, if the pointer is still on the marker
-								Point p = new Point(0,0);
-								mapView.getProjection().toPixels(movedItem.getPoint(), p);
-								Point p2 = new Point(0,0);
-								mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0,0), p2);
-								
-								if (!marker.getBounds().contains(p2.x + x - p.x , p2.y + y - p.y)) {
-									// Pointer is not on the marker anymore, user has probably lost interest in this marker
-									canBeMoved = false;
+								addRadioButtonsListener(d);
+								if (d.getDialog() == null) {
+									Log.d("Tap","Dialog == null");
+								} else {
+									// Set the texts in edit bars corresponding to the former name and room
+									EditText n = (EditText) d.getDialog().findViewById(R.id.edit_name);
+									EditText r = (EditText) d.getDialog().findViewById(R.id.edit_room);
+									radioButtons.set(0, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton0));
+									radioButtons.set(1, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton1));
+									radioButtons.set(2, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton2));
+									n.setText(editedItem.getTitle());
+									r.setText(editedItem.getSnippet());
+									radioButtons.get(teacherFloors.get(markers.indexOf(editedItem))).setChecked(true);
+								//	f.setText(teacherFloors.get(markers.indexOf(editedItem)).toString());
 								}
-							} else {
-								// Item is already unpinned, we just need to move it
-								RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) movedImage.getLayoutParams();
-								Rect bounds = marker.getBounds();
-								lp.setMargins(x + bounds.left, y + bounds.top, 0, 0);
-								movedImage.setLayoutParams(lp);
+								// Item is not moved, it's only being edited
+								movedItem = null;
+							}
+							if ((movedItem != null) && (!movedItemPinned)){
+								// Item was actually moved from it's former position (at least it was unpinned), so pin it back
+								Log.d("Touch Event - Up","Pinning back");
+								GeoPoint g = (GeoPoint) mapView.getProjection().fromPixels(x, y);
+								// Create new OverlayItem with the desired preferences
+								OverlayItem oi = new OverlayItem( movedItem.getTitle(), movedItem.getSnippet(), g);
+								oi.setMarker(marker);
+								oi.setMarkerHotspot(HotspotPlace.CENTER);
+								// Update all the arrays regarding this marker
+								selectedPositions.add(oi);
+								int index = markers.indexOf(movedItem);
+								int index2 = globalSelectedPositions.indexOf(movedItem);
+								globalSelectedPositions.set(index2, oi);
+								markers.set(index, oi);
+								teacherPositions.set(index, g);
+								// Hide the image
+								hideView(movedImage);
+								// Update overlay
+								mapView.getOverlays().remove(myOverlay);
+								myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
+								mapView.getOverlays().add(myOverlay);
+								mapView.invalidate();
+								// Item is not moved anymore
+								movedItem = null;
+							}
+							result = true;
+						}
+					} else {
+					
+						if (event.getAction() == MotionEvent.ACTION_DOWN) {
+							if (!dialogShown) {
+								// Find out which item was clicked on
+								lowestDist = 10000;
+								lowestDistItem = null;
+								int counter = 0;
+								for (OverlayItem item : selectedPositions) {
+									Point p = new Point(0,0);
+									mapView.getProjection().toPixels(item.getPoint(), p);
+									Point p2 = new Point(0,0);							
+									mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0, 0), p2);
+									Rect bounds = marker.getBounds();
+									
+									Log.d("Touch Event - Down", "Point X:" + (p.x - p2.x) + ", Y:" + (p.y - p2.y));
+									Log.d("Touch Event - Down", "Position X:" + x + ", Y:" + y);
+									Log.d("Touch Event - Down", "Marker Bounds: L:" + bounds.left + ", R:" + bounds.right + ", B:" + bounds.bottom + ", T:" + bounds.top); 
+									
+									long dist = sqr((p.x - p2.x) - x) + sqr((p.y - p2.y)- y);
+									
+									if ((dist < sqr(distTreshold)/2) && (counter < 5)) {
+										counter++; // So that it wouldn't show like..all of them when they are in overview
+										Toast.makeText(OSMDroidMapActivity.this, item.mTitle + " ("+item.mDescription+") ", Toast.LENGTH_SHORT).show();
+									}
+									
+									
+									if ((dist < lowestDist) || (lowestDistItem == null)) {
+										lowestDist = dist;
+										lowestDistItem = item;										
+									}
+									
+								}
+								
+								if (lowestDistItem != null) { // It actually had searched through some items
+									if ((lowestDist < sqr(distTreshold)) && (lowestDist >= sqr(distTreshold)/2)) {
+										// Displaying a single item
+										Toast.makeText(OSMDroidMapActivity.this, lowestDistItem.mTitle + " (" + lowestDistItem.mDescription + ") ", Toast.LENGTH_SHORT).show();
+									}
+								}
 							}
 						}
-						result = true;
-					}
-					if (event.getAction() == MotionEvent.ACTION_UP) {
-						if (newItem) {
-							canBeMoved = false;
-							timer.cancel();
-							timerRunning = false;
-						}
-						if (((movedItem != null) && (movedItemPinned)) && (!newItem) && (!dialogShown)) {
-							// Item was only clicked, not moved
-							canBeMoved = false;
-							timer.cancel();
-							timerRunning = false;
-							Log.d("Touch Event - Up", "Showing Dialog");
-							// Therefore, it's going to be edited
-							editedItem = movedItem;
-							// Show the custom dialog for editing markers
-							dialogShown = true;
-							NoticeDialogFragment d = new NoticeDialogFragment();
-							d.show(getFragmentManager(), "MarkerEdit");
-							getFragmentManager().executePendingTransactions();
-							addRadioButtonsListener(d);
-							if (d.getDialog() == null) {
-								Log.d("Tap","Dialog == null");
-							} else {
-								// Set the texts in edit bars corresponding to the former name and room
-								EditText n = (EditText) d.getDialog().findViewById(R.id.edit_name);
-								EditText r = (EditText) d.getDialog().findViewById(R.id.edit_room);
-								radioButtons.set(0, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton0));
-								radioButtons.set(1, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton1));
-								radioButtons.set(2, (RadioButton) d.getDialog().findViewById(R.id.radioFloorButton2));
-								n.setText(editedItem.getTitle());
-								r.setText(editedItem.getSnippet());
-								radioButtons.get(teacherFloors.get(markers.indexOf(editedItem))).setChecked(true);
-							//	f.setText(teacherFloors.get(markers.indexOf(editedItem)).toString());
-							}
-							// Item is not moved, it's only being edited
-							movedItem = null;
-						}
-						if ((movedItem != null) && (!movedItemPinned)){
-							// Item was actually moved from it's former position (at least it was unpinned), so pin it back
-							Log.d("Touch Event - Up","Pinning back");
-							GeoPoint g = (GeoPoint) mapView.getProjection().fromPixels(x, y);
-							// Create new OverlayItem with the desired preferences
-							OverlayItem oi = new OverlayItem( movedItem.getTitle(), movedItem.getSnippet(), g);
-							oi.setMarker(marker);
-							oi.setMarkerHotspot(HotspotPlace.CENTER);
-							// Update all the arrays regarding this marker
-							selectedPositions.add(oi);
-							int index = markers.indexOf(movedItem);
-							int index2 = globalSelectedPositions.indexOf(movedItem);
-							globalSelectedPositions.set(index2, oi);
-							markers.set(index, oi);
-							teacherPositions.set(index, g);
-							// Hide the image
-							hideView(movedImage);
-							// Update overlay
-							mapView.getOverlays().remove(myOverlay);
-							myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
-							mapView.getOverlays().add(myOverlay);
-							mapView.invalidate();
-							// Item is not moved anymore
-							movedItem = null;
-						}
-						result = true;
 					}
 				}
-				
+					
+					
 				return result;
 			}
 			
@@ -1081,6 +1214,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         
         // Simple overlay
         markers = new ArrayList<OverlayItem>();
+        markersInvisible = new ArrayList<OverlayItem>();
         defaultResourceProxyImpl = new DefaultResourceProxyImpl(this);
 
         // Build the ArrayList of all the markers
@@ -1094,6 +1228,11 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         	oitem.setMarkerHotspot(HotspotPlace.CENTER);
         	oitem.setMarker(marker);
         	markers.add(oitem);
+        	
+        	OverlayItem oitem2 = new OverlayItem(tmp, teacherNames.get(i).get(teacherNames.get(i).size()-1), teacherPositions.get(i));
+        	oitem2.setMarkerHotspot(HotspotPlace.CENTER);
+        	oitem2.setMarker(markerInvisible);
+        	markersInvisible.add(oitem2);
         }
         
         gestureListener = new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
@@ -1103,12 +1242,12 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			}
 
 			public boolean onItemSingleTapUp(int arg0, OverlayItem arg1) {
-				if (!editMode) {
+				/*if (!editMode) {
 					// Show name + room if the edit mode is not activated
 					Toast.makeText(
 	                        OSMDroidMapActivity.this, 
 	                        arg1.mTitle + " (" + arg1.mDescription + ")",Toast.LENGTH_SHORT).show();
-				}
+				}*/
 				return false;
 			}
 
@@ -1116,9 +1255,9 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         
 		for (int i = 0; i < markers.size(); i++) {
 			if (teacherFloors.get(i) == currentFloor) {
-				selectedPositions.add(markers.get(i));
+				selectedPositions.add(markersInvisible.get(i));
 			}
-			globalSelectedPositions.add(markers.get(i));
+			globalSelectedPositions.add(markersInvisible.get(i));
 			globalSelectedIndexes.add(i);
 		}
 		myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
@@ -1131,6 +1270,12 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
         // Set the borders of this view
     	mapView.setScrollableAreaLimit(new BoundingBoxE6(BorderLeftTop.getLatitudeE6(),BorderRightBottom.getLongitudeE6(),BorderRightBottom.getLatitudeE6(),BorderLeftTop.getLongitudeE6()));
     	mapView.invalidate();
+    	mapView.postInvalidate();
+	}
+
+	protected long sqr(long i) {
+		// TODO Auto-generated method stub
+		return i*i;
 	}
 
 	@Override
@@ -1143,12 +1288,22 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	@Override
 	public boolean dispatchTouchEvent(MotionEvent ev) {		
 		
-		if (dialogShown) {
+		if ((dialogShown) && (ev.getAction() == MotionEvent.ACTION_DOWN) && (dialogStarted)) {
 			dialogShown = false;
+			dialogStarted = false;
+			Log.d("Map Touch Event","Hiding dialog");
 		}
 		
 		return super.dispatchTouchEvent(ev);
 		
+	}
+
+	
+	// FAILING HERE, NEEDS FIX !
+	
+	public void onDialogStart(NoticeDialogFragment dialog) {
+		Log.d("Dialog Event","On Start");
+		dialogStarted = true;
 	}
 	
 }
