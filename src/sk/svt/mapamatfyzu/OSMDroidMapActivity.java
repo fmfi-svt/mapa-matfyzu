@@ -125,19 +125,23 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	boolean newItem;
 	boolean timerRunning = false; // Only one timer can be running at time
 	boolean dialogShown = false; // Only one dialog can be shown at a time
-	boolean dialogStarted = false; // Controlls if the dialog was actually shown to the user
+	boolean dialogStarted = false; // Controls if the dialog was actually shown to the user
 	int maxListSize = 3;
 	ImageView editButton; // Button for switching to edit mode
 	ImageView saveButton; // Button for saving edited data
 	Timer timer;
 	String filename; // Name of the file, where all the data is stored (can be relative path)
 	int x,y; // last position of pointer
-	int lastPointerCount = 1; // Number of pointers on the last touch event
+	int pointerCount = 0; // Number of pointers on the last touch event
+	boolean pointersNeedReset = false; // If there are more pointers than 1, they need to get down to 0 before activating smart moves
 	ArrayList<OverlayItem> newItems = new ArrayList<OverlayItem>(); // Recently added items (before changing the search bar)
 	ArrayList<RadioButton> radioButtons = new ArrayList<RadioButton>();
 	long lowestDist;
 	OverlayItem lowestDistItem;
 	long distTreshold = 30;
+	long fingerRadius = 15;
+	Point lastDown;
+	
 	
 	private Handler handler = new Handler() {
 		@Override
@@ -180,7 +184,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 					movedItem = null;
 				}
 			} else {
-				Toast.makeText(OSMDroidMapActivity.this, "Premiestniť učiteľa " + movedItem.mTitle, Toast.LENGTH_SHORT).show();
+				Toast.makeText(OSMDroidMapActivity.this, "Premiestniť učiteľa " + movedItem.mTitle + " (" + movedItem.mDescription + ")", Toast.LENGTH_SHORT).show();
 				selectedPositions.remove(movedItem);
 				mapView.getOverlays().remove(myOverlay);
 				myOverlay = new ItemizedIconOverlay<OverlayItem>(selectedPositions, gestureListener, defaultResourceProxyImpl);
@@ -802,7 +806,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
       //  mapView.setBuiltInZoomControls(true);  // Touch events don't work when zoom controls are enabled
         mapView.setMultiTouchControls(true); 
         
-        mapView.getController().setZoom(18);
+        mapView.getController().setZoom(17);
         
         editButton.setOnClickListener(new OnClickListener() {
 
@@ -842,16 +846,34 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 			
 			public boolean onTouch(View v, MotionEvent event) {
 				// TODO Auto-generated method stub
-				boolean result = false;
+				boolean result = true;
 				
 				// Hide the keyboard
-				if (event.getAction() == MotionEvent.ACTION_DOWN) {
+				/*
+				if ((event.getAction() == MotionEvent.ACTION_DOWN) || (event.getAction() == MotionEvent.ACTION_POINTER_DOWN)){
 					imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
 					hideView(list);	
 					result = true;
+					pointerCount++;
+				}				
+				
+				if ((event.getAction() == MotionEvent.ACTION_UP) || (event.getAction() == MotionEvent.ACTION_POINTER_UP)) {
+					pointerCount--;
 				}
-				lastPointerCount = event.getPointerCount();
-				if (event.getPointerCount() == 1) {
+				*/
+				
+				if (pointersNeedReset) {
+					if (pointerCount == 0) {
+						pointersNeedReset = false;
+					}
+					return true;
+				}
+				
+				if (pointerCount > 1) {
+					pointersNeedReset = true;
+					return true;
+				} else {
+				
 					Log.d("Touch Event", "Any");
 					
 					// Treshold in milliseconds between click and long click
@@ -870,6 +892,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 								// Find out which item was clicked on
 								lowestDist = 10000;
 								lowestDistItem = null;
+								lastDown = new Point(x,y);
 								for (OverlayItem item : selectedPositions) {
 									Point p = new Point(0,0);
 									mapView.getProjection().toPixels(item.getPoint(), p);
@@ -944,7 +967,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 											// DOESN'T WORK PROPERLY WHEN ZOOMING BY MULTITOUCHING
 											
 											
-											if (lastPointerCount == 1) {
+										//	if (lastPointerCount == 1) {
 												Log.d("Timer time elapsed", "canBeMoved == " + canBeMoved);
 												if (!dialogShown) {
 													if (canBeMoved) {
@@ -958,7 +981,7 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 														timerRunning = false;
 													}
 												}
-											}
+										//	}
 										}
 										
 									}, pressTimeTreshold);
@@ -979,10 +1002,22 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 									Point p2 = new Point(0,0);
 									mapView.getProjection().toPixels(mapView.getProjection().fromPixels(0,0), p2);
 									
-									if (!marker.getBounds().contains(p2.x + x - p.x , p2.y + y - p.y)) {
+									long dist = sqr(x - lastDown.x) + sqr(y - lastDown.y);
+									Log.d("Touch Event - Positions","P2: [" + p2.x + ", " + p2.y + "] " + ", T: [" + x + ", " + y +
+											"], LD: [" + lastDown.x + ", " + lastDown.y + "] ");
+									
+									
+									if (dist > sqr(fingerRadius)) {
 										// Pointer is not on the marker anymore, user has probably lost interest in this marker
 										canBeMoved = false;
 									}
+
+									
+									/*
+									if (!marker.getBounds().contains(p2.x + x - p.x , p2.y + y - p.y)) {
+										canBeMoved = false;
+									}
+									*/
 								} else {
 									// Item is already unpinned, we just need to move it
 									RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) movedImage.getLayoutParams();
@@ -1100,10 +1135,10 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 									}
 								}
 							}
+							result = true;
 						}
 					}
 				}
-					
 					
 				return result;
 			}
@@ -1286,15 +1321,27 @@ public class OSMDroidMapActivity extends Activity implements NoticeDialogFragmen
 	}
 	
 	@Override
-	public boolean dispatchTouchEvent(MotionEvent ev) {		
+	public boolean dispatchTouchEvent(MotionEvent event) {		
 		
-		if ((dialogShown) && (ev.getAction() == MotionEvent.ACTION_DOWN) && (dialogStarted)) {
+		if ((dialogShown) && (event.getAction() == MotionEvent.ACTION_DOWN) && (dialogStarted)) {
 			dialogShown = false;
 			dialogStarted = false;
 			Log.d("Map Touch Event","Hiding dialog");
 		}
 		
-		return super.dispatchTouchEvent(ev);
+		if ((event.getAction() == MotionEvent.ACTION_DOWN) || (event.getAction() == MotionEvent.ACTION_POINTER_DOWN)){
+			imm.hideSoftInputFromWindow(edit.getWindowToken(), 0);
+			hideView(list);
+			pointerCount++;
+		}				
+		
+		if ((event.getAction() == MotionEvent.ACTION_UP) || (event.getAction() == MotionEvent.ACTION_POINTER_UP)) {
+			pointerCount--;
+		}
+
+		//floorButton.setText("P: "+pointerCount+"N:"+event.getAction());
+		
+		return super.dispatchTouchEvent(event);
 		
 	}
 

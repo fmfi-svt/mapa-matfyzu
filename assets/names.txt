@@ -1,8 +1,5 @@
 #begin
- Mgr. Martin Králik M25#48.152364#17.069071$0
- RNDr. Michal Foríšek PhD. M263#48.152303#17.070213$2
- Prof. RNDr. Branislav Rovan PhD. M259#48.152312#17.069998$2
- RNDr. Martin Sleziak PhD. M129#48.15238#17.068794$1
+ Mgr. Martin Králik M25#48.152337#17.069079$0
  Doc. RNDr. Eugen Viszus CSC. M180#48.152304#17.070901$1
  RNDr. Peter Švaňa CSc. M179#48.152303#17.070862$1
  Ján Valášek Csc. M178#48.152297#17.070809$1
@@ -30,4 +27,164 @@
  Doc. RNDr. Miloš Božek CSc. M156#48.152304#17.069824$1
  Doc. RNDr. Eduard Boďa PhD. M155#48.152292#17.069787$1
  RNDr. Marianna Polednová PhD. M154#48.152301#17.069728$1
+ RNDr. Soňa Kudličková PhD. M154#48.152308#17.069739$1
+ Doc. RNDr. Ferko Andrej CSc. M151#48.152308#17.069578$1
+ Doc. RNDr. Vladislav Rosa PhD. M150#48.152278#17.069551$1
+ RNDr. Monika Dillingerová PhD. M149#48.15231#17.069492$1
+ PaedDr. Lilla Koreňová PhD. M149#48.152292#17.069497$1
+ PaedDr. Marta Pémová PhD. M148#48.152308#17.069452$1
+ PaedDr. Miroslav Tisoň PhD. M148#48.152292#17.069452$1
+ Mgr. Dominika Koštová M148#48.152306#17.069452$1
+ Mgr. Vlaďka Laššáková M148#48.15229#17.069452$1
+ PaedDr. Michaela Regecová PhD. M147#48.152294#17.069417$1
+ PaedDr. Mária Slavíčková PhD. M147#48.152301#17.069414$1
+ PaedDr. Iveta Kohanová PhD. M146#48.152299#17.069366$1
+ PaedDr. Peter Vankúš PhD. M145#48.152306#17.069323$1
+ Doc. RNDr. Róbert Jajcay M144#48.152299#17.06928$1
+ Mgr. Veronika Hospodárová M143#48.152299#17.069232$1
+ Mgr. Monika Porkertová M143#48.152297#17.069237$1
+ Mgr. Katalin Hlavcsek M143#48.152304#17.069224$1
+ Mgr. Vladislav Banas M143#48.152313#17.069218$1
+ RNDr. Miroslava Valíková M142#48.152299#17.069173$1
+ RNDr. Ivana Varhaníková M142#48.152303#17.06917$1
+ Maťko Valík M142#48.15229#17.06917$1
+ Mgr. Ildikó Muzslayová M141#48.152303#17.069127$1
+ Prof. RNDr. Pavel Kostyrko DrSc. M140#48.15231#17.069065$1
+ Prof. RNDr. Július Korbaš CSc. M139#48.152299#17.069022$1
+ RNDr. Jana Tomanová CSc. M138#48.152308#17.06899$1
+ Prof. RNDr. Tibor Katriňák DrSc. M137#48.152299#17.068945$1
+ RNDr. Mária Benešová CSc. M136#48.15231#17.068907$1
+ Doc. RNDr. Juraj Činčura CSc. M135#48.152296#17.06887$1
+ Mgr. Jana Štolcová M133#48.152297#17.068803$1
+ Mgr. Kristína Kováčiková M133#48.152301#17.068797$1
+ Doc. RNDr. Martin Mačaj PhD. M132#48.152301#17.068754$1
+ Mgr. Martin Niepel PhD. M131#48.152297#17.068709$1
+ Mgr. Tomáš Rusin M131#48.152304#17.068706$1
+ Mgr. Ľudovít Balko M131#48.152303#17.068709$1
+ Mgr. Lenka Molitorisová M130#48.152394#17.068722$1
+ RNDr. Veronika Lacková M130#48.152367#17.068717$1
+ Mgr. Zuzana Kimličková M130#48.152372#17.068717$1
+ RNDr. Jaroslav Guričan CSc. M129#48.152376#17.068805$1
+ RNDr. Martin Sleziak PhD. M129#48.15239#17.068789$1
+ Prof. RNDr. Pavol Zlatoš PhD. M128#48.15238#17.068859$1
+ Mgr. Ondrej Marušiak M125#48.152365#17.069052$1
+ Mgr. Erika Erdélyi M125#48.152383#17.069055$1
+ Mgr. Martin Harcek M125#48.152376#17.069081$1
+ Mgr. Tomáš Miklošovič M125#48.152387#17.069052$1
+ Mgr. Simona Štefanovičová M125#48.152383#17.069047$1
+ Mgr. Róbert Patejdl M125#48.152387#17.069049$1
+ Doc. RNDr. Viera Uherčíková CSc. M124#48.152387#17.069264$1
+ Mgr. Mária Gemeranová M123#48.152376#17.069315$1
+ Mgr. Ivana Uhlíková M123#48.152381#17.069323$1
+ Mgr. Michal Ferko M123#48.152381#17.069323$1
+ Mgr. Tomáš Kovačovský M123#48.152383#17.069309$1
+ Mgr. Petra Heribanová M123#48.152372#17.069317$1
+ Mgr. Viktória Bakurová M122#48.15238#17.069358$1
+ Mgr. Barbora Pokorná M122#48.15239#17.069366$1
+ Mgr. David Běhal M122#48.152367#17.069368$1
+ Prof. RNDr. Ján Čižmár CSc. M118#48.152378#17.069562$1
+ RNDr. Zita Sklenáriková PhD. M118#48.152389#17.06958$1
+ Doc. RNDr. Valent Zaťko PhD. M117#48.152376#17.069637$1
+ RNDr. Martina Bátorová M117#48.15238#17.069639$1
+ RNDr. Jana Pílniková PhD. M114#48.152378#17.069803$1
+ RNDr. Róbert Bohdal PhD. M114#48.152381#17.069806$1
+ Mgr. Andrej Mihálik M113#48.152381#17.069854$1
+ Mgr. Onderík Juraj M113#48.152383#17.069857$1
+ Mgr. Michal Chládek M113#48.152383#17.069859$1
+ Mgr. Jana Dadová M113#48.152369#17.069867$1
+ Mgr Pavol Fabo M113#48.152383#17.069862$1
+ Doc. RNDr. Peter Mederly M111#48.152372#17.070154$1
+ Prof. RNDr. Ján Filo CSc. M110#48.152378#17.070221$1
+ Mgr. Lukáš Polesňák M108#48.15238#17.070313$1
+ Prof. RNDr. Michal Fečkan DrSc. M106#48.152376#17.070433$1
+ RNDr. Michal Demetrian PhD. M105#48.152381#17.070541$1
+ Prof. RNDr. Milan Medveď DrSc. M104#48.152383#17.070632$1
+ Doc. RNDr. Jozef Vencko CSc. M103#48.152385#17.070723$1
+ Mgr. Marek Zeman M227#48.152376#17.068714$2
+ Mgr. Labáth Pavel M227#48.152369#17.068714$2
+ Mgr. Ivan Kováč M227#48.152381#17.068714$2
+ Dr. Mgr. Peter Fúsek M226#48.152378#17.068765$2
+ Mgr. Peter Novotný M226#48.152381#17.06877$2
+ Mgr. Pavol Kišon M225#48.152374#17.068819$2
+ Mgr. Peter Otčenáš M225#48.152374#17.068824$2
+ Mgr. Katarína Pračková M222#48.152381#17.068971$2
+ Mgr. Jana Junková M222#48.152387#17.068977$2
+ Mgr. Daniela Mikóczyová M222#48.152378#17.068971$2
+ Mgr. Eva Zábojníková M222#48.152376#17.068985$2
+ Mgr. Norbert Švarda M221#48.152383#17.069031$2
+ Mgr. Martin Tóth M221#48.152374#17.069044$2
+ Doc. RNDr. Daniel Olejár PhD. M214#48.152378#17.069701$2
+ Doc. RNDr. Martin Stanek PhD. M214#48.15238#17.069698$2
+ RNDr. Andrej Bebják M212#48.152381#17.069838$2
+ RNDr. Tomáš Kulich PhD. M212#48.152383#17.069841$2
+ RNDr. Zuzana Rudolfová M210#48.152383#17.070168$2
+ Doc. Mgr. Igor Melicherčík PhD. M207#48.152374#17.070377$2
+ Prof. Aleš Černý M207#48.152385#17.070372$2
+ Dr. Zuzana Siebertová M206#48.152385#17.070439$2
+ Mgr. Pavol Bokes PhD. M206#48.152381#17.070433$2
+ Dr. Zuzana Chladná M206#48.152376#17.070444$2
+ Mgr. Darina Graczová M204#48.152381#17.070608$2
+ Mgr. Mária Holecyová M204#48.152385#17.07061$2
+ Mgr. Csila Krommerová M204#48.152389#17.070621$2
+ Mgr. Magdaléna Žitňanská M204#48.152383#17.070618$2
+ Mgr. Samuel Peres M203#48.152394#17.070715$2
+ Mgr. Martin Lauko M203#48.152371#17.070734$2
+ Mgr. Juraj Kyselica M203#48.152385#17.070726$2
+ Mgr. Ivana Bátorová M276#48.15229#17.070913$2
+ Mgr. Katarína Danišková M276#48.152297#17.070919$2
+ Mgr. Július Pačuta M276#48.15229#17.070919$2
+ Doc. Dr. Ing. Jarko Fidrmuc M276#48.152297#17.070913$2
+ RNDr. Juraj Zeman CSc. M276#48.152303#17.070905$2
+ Doc. RNDr. Pavol Quittner DrSc. M275#48.152306#17.070849$2
+ Prof. RNDr. Daniel Ševčovič CSc. M274#48.152301#17.070795$2
+ RNDr. Dušan Krajčovič CSc. M273#48.152292#17.070747$2
+ RNDr. Ľubica Kossaczká M273#48.152304#17.070747$2
+ Prof. RNDr Marek File DrSc. M272#48.152299#17.070691$2
+ Prof. RNDr. Pavel Brunovský DrSc. M271#48.152296#17.07064$2
+ Doc. RNDr. Peter Guba PhD. M269#48.152299#17.070535$2
+ Prof. Dr. Dipl.-Ing. Mikuláš Luptáčik M268#48.152297#17.070479$2
+ Doc. RNDr. Margaréta Halická CSc. M268#48.152301#17.070476$2
+ Mgr. Soňa Kilianová PhD. M267#48.152303#17.070423$2
+ RNDr. Mária Trnovská PhD. M267#48.152299#17.070423$2
+ Mgr. Martin Kollár M266 PhD. M266#48.152297#17.070366$2
+ RNDr. Beáta Stehlíková PhD. M266#48.152304#17.070364$2
+ Mgr. Zuzana Zíková M266#48.152301#17.070369$2
+ RNDr. Igor Odrobina CSc. M265#48.152303#17.070321$2
+ Mgr. Ing. Radka Bírová M264#48.152301#17.070259$2
+ Ján Trenčanský M264#48.152297#17.070267$2
+ RNDr. Jana Katreniaková PhD. M263#48.152304#17.070211$2
+ RNDr. Michal Foríšek PhD. M263#48.152308#17.070211$2
+ Dr. Tomáš Plachetka PhD. M262#48.152500#17.070500$2
+ Mgr. Daniel Štefankovič M262#48.152500#17.070400$2
+ Mgr. Ivan Kopáčik M262#48.152500#17.070300$2
+ Mgr. Peter Neurath M262#48.152500#17.070200$2
+ Doc. RNDr. Rastislav Královič PhD. M261#48.152500#17.070100$2
+ RNDr. Edita Mačajová PhD. M261#48.152500#17.070000$2
+ Mgr. Richard Královič M261#48.152500#17.069900$2
+ Prof. RNDr. Branislav Rovan PhD. M259#48.152500#17.069800$2
+ Mgr. Ivana Selečéniová M258#48.152500#17.069700$2
+ Mgr. Marika Mitrengová M258#48.152500#17.069600$2
+ RNDr. Jana Dvořáková PhD. M258#48.152500#17.069500$2
+ Prof. RNDr. Martin Škoviera PhD. M257#48.152500#17.069400$2
+ Prof. RNDr. Pavol Ďuriš CSc. M256#48.152500#17.069300$2
+ RNDr. Mária Pastorová M255#48.152500#17.069200$2
+ RNDr. Jaroslav Janáček PhD. M253#48.152500#17.069100$2
+ Mgr. Ľubica Janáčková M253#48.152500#17.069000$2
+ RNDr. Richard Ostertág PhD. M252#48.152500#17.068900$2
+ RNDr. Peter Gaži PhD. 252#48.152500#17.068800$2
+ Doc. RNDr. Eduard Toman CSc. M251#48.152500#17.068700$2
+ Doc. RNDr. Dana Pardubská PhD. M250#48.152500#17.068600$2
+ Mgr. Radovan Červenka M250#48.152500#17.068500$2
+ Mgr. Jozef Minár M238#48.152500#17.068400$2
+ Doc. RNDr. Ján Pekár PhD. M237#48.152500#17.068300$2
+ Prof. RNDr. Jozef Kačur DrSc. M235#48.152500#17.068200$2
+ Katarína Boďová M234#48.152500#17.068100$2
+ Richard Kollár M234#48.152500#17.068000$2
+ Doc. RNDr. Ján Boďa CSc. M233#48.152500#17.067900$2
+ Doc. RNDr. Milan Hamala CSc. M232#48.152500#17.067800$2
+ Doc. RNDr. Anna Valková CSc. M231#48.152500#17.067700$2
+ RNDr. Taťjana Bušinská CSc. M231#48.152500#17.067600$2
+ Prof. RNDr. Ján Plesník DrSc. M230#48.152500#17.067500$2
+ Mgr. Jela Babušíková PhD. M229#48.152500#17.067400$2
+ Doc. RNDr. Pavol Chocholatý CSc. M228#48.152500#17.067300$2
 #end
